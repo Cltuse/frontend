@@ -12,10 +12,10 @@ RUN npm run build
 FROM nginx:stable-alpine
 
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
-COPY docker-entrypoint.d/40-runtime-config.sh /docker-entrypoint.d/40-runtime-config.sh
+COPY docker-entrypoint.d/ /docker-entrypoint.d/
 COPY --from=build /app/dist /usr/share/nginx/html
 
-RUN chmod +x /docker-entrypoint.d/40-runtime-config.sh
+RUN chmod +x /docker-entrypoint.d/*.sh /docker-entrypoint.d/*.envsh
 
 EXPOSE 80
 
