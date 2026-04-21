@@ -4,7 +4,7 @@
       <div class="hero-copy">
         <span class="eyebrow">Operations Dashboard</span>
         <h1>维护端决策看板</h1>
-        <p>把维护任务、场地热度、预约高峰和热门区域放到同一个视角里，方便你快速判断开放策略和处理优先级。</p>
+        <p>把维护任务、设施热度、预约高峰和热门区域放到同一个视角里，方便你快速判断开放策略和处理优先级。</p>
       </div>
 
       <div class="hero-tools">
@@ -97,19 +97,45 @@
     </section>
 
     <section class="chart-grid heatmap-grid">
-      <el-card class="chart-card wide-card">
-        <template #header>
-          <div class="card-header">
-            <div>
-              <h2>场地热力图</h2>
-              <p>横轴为小时段，纵轴为场地，颜色越深表示该时段预约越密集。</p>
+      <div class="heatmap-column">
+        <el-card class="chart-card wide-card">
+          <template #header>
+            <div class="card-header">
+              <div>
+                <h2>设施热力图</h2>
+                <p>横轴为小时段，纵轴为设施，颜色越深表示该时段预约越密集。</p>
+              </div>
             </div>
-          </div>
-        </template>
-        <div ref="heatmapChartRef" class="chart-body heatmap-chart"></div>
-      </el-card>
+          </template>
+          <div ref="heatmapChartRef" class="chart-body heatmap-chart"></div>
+        </el-card>
 
-      <div class="stack-panel">
+        <el-card class="chart-card fill-card">
+          <template #header>
+            <div class="card-header">
+              <div>
+                <h2>设施使用率排行</h2>
+                <p>帮助快速识别过热和闲置资源。</p>
+              </div>
+            </div>
+          </template>
+          <div class="list-panel tall-list-panel">
+            <article v-for="item in topFacilities" :key="item.facilityId" class="list-row">
+              <div>
+                <strong>{{ item.facilityName }}</strong>
+                <span>{{ item.location || '未标注区域' }}</span>
+              </div>
+              <div class="list-metric">
+                <strong>{{ item.utilizationRate }}%</strong>
+                <span>{{ item.reservationCount }} 次预约</span>
+              </div>
+            </article>
+            <el-empty v-if="!topFacilities.length" description="暂无设施使用率数据" />
+          </div>
+        </el-card>
+      </div>
+
+      <div class="stack-panel heatmap-side-panel">
         <el-card class="chart-card">
           <template #header>
             <div class="card-header">
@@ -146,32 +172,6 @@
           </div>
         </el-card>
       </div>
-    </section>
-
-    <section class="chart-grid tertiary-grid">
-      <el-card class="chart-card">
-        <template #header>
-          <div class="card-header">
-            <div>
-              <h2>场地使用率排行</h2>
-              <p>帮助快速识别过热和闲置资源。</p>
-            </div>
-          </div>
-        </template>
-        <div class="list-panel">
-          <article v-for="item in topFacilities" :key="item.facilityId" class="list-row">
-            <div>
-              <strong>{{ item.facilityName }}</strong>
-              <span>{{ item.location || '未标注区域' }}</span>
-            </div>
-            <div class="list-metric">
-              <strong>{{ item.utilizationRate }}%</strong>
-              <span>{{ item.reservationCount }} 次预约</span>
-            </div>
-          </article>
-          <el-empty v-if="!topFacilities.length" description="暂无场地使用率数据" />
-        </div>
-      </el-card>
     </section>
   </div>
 </template>
@@ -487,16 +487,23 @@ const renderHeatmapChart = () => {
         return `${facility}<br/>${slot}<br/>预约热度：${value}`
       }
     },
-    grid: { left: 100, right: 24, bottom: 30, top: 20, containLabel: true },
+    grid: { left: 110, right: 24, bottom: 76, top: 20, containLabel: true },
     xAxis: {
       type: 'category',
       data: heatmapStats.value.timeSlots || [],
-      splitArea: { show: true }
+      splitArea: { show: true },
+      axisLabel: {
+        margin: 14,
+        color: '#64748b'
+      }
     },
     yAxis: {
       type: 'category',
       data: heatmapStats.value.facilities || [],
-      splitArea: { show: true }
+      splitArea: { show: true },
+      axisLabel: {
+        color: '#64748b'
+      }
     },
     visualMap: {
       min: 0,
@@ -504,7 +511,12 @@ const renderHeatmapChart = () => {
       calculable: true,
       orient: 'horizontal',
       left: 'center',
-      bottom: 0,
+      bottom: 6,
+      text: ['高热度', '低热度'],
+      textGap: 12,
+      textStyle: {
+        color: '#64748b'
+      },
       inRange: {
         color: ['#fff7ed', '#fdba74', '#f97316', '#9a3412']
       }
@@ -716,19 +728,27 @@ const goTo = (path, query) => {
 .secondary-grid,
 .heatmap-grid {
   grid-template-columns: 1fr 1fr;
+  align-items: stretch;
 }
 
-.tertiary-grid {
-  grid-template-columns: 1fr;
+.heatmap-grid {
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr);
 }
 
+.heatmap-column,
 .stack-panel {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 20px;
+  min-width: 0;
 }
 
 .wide-card {
   min-width: 0;
+}
+
+.fill-card {
+  height: 100%;
 }
 
 .chart-card {
@@ -769,12 +789,17 @@ const goTo = (path, query) => {
 }
 
 .heatmap-chart {
-  height: 420px;
+  height: 460px;
 }
 
 .list-panel {
   display: grid;
   gap: 12px;
+}
+
+.tall-list-panel {
+  height: 100%;
+  align-content: start;
 }
 
 .list-row {
@@ -824,6 +849,11 @@ const goTo = (path, query) => {
   .secondary-grid,
   .heatmap-grid {
     grid-template-columns: 1fr;
+  }
+
+  .heatmap-column,
+  .stack-panel {
+    grid-template-rows: auto;
   }
 }
 
