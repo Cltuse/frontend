@@ -1,176 +1,116 @@
 <template>
-  <div class="maintainer-maintenance">
-    <!-- 页面标题区域 -->
-    <div class="page-header">
-      <div class="header-decoration"></div>
-      <div class="header-content">
-        <h1 class="page-title">
-          <div class="title-icon">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          我的设施维护
-        </h1>
-        <p class="page-subtitle">管理您负责设施的维护登记、状态更新与处理进度</p>
+  <div class="page-shell maintenance-theme">
+    <section class="page-hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Maintenance Flow</span>
+        <h1>维护登记</h1>
+        <p>统一管理本人负责场地的维护任务，保持创建、编辑、完成和详情查看都在同一操作节奏里。</p>
       </div>
-    </div>
 
-    <!-- 操作按钮区域 -->
-    <div class="operations-container">
-      <el-row :gutter="20" align="middle">
-        <el-col :span="16">
-          <el-space>
-            <!-- 维护状态筛选（已维护?未维护?所有记录）- 置顶显示 -->
-            <el-select
-                v-model="maintenanceStatusFilter"
-                placeholder="维护状态"
-                style="width: 130px"
-                clearable
-                @change="handleMaintenanceStatusFilter"
-            >
-              <el-option label="所有记录" value="" />
-              <el-option label="已维护" value="MAINTAINED" />
-              <el-option label="未维护" value="UNMAINTAINED" />
-            </el-select>
-            
-            <!-- 任务状态筛选 -->
-            <el-select
-                v-model="statusFilter"
-                placeholder="任务状态"
-                style="width: 130px"
-                clearable
-                @change="handleStatusFilter"
-            >
-              <el-option label="所有记录" value="" />
-              <el-option label="待处理" value="PENDING" />
-              <el-option label="进行中" value="IN_PROGRESS" />
-              <el-option label="已完成" value="COMPLETED" />
-              <el-option label="已取消" value="CANCELLED" />
-            </el-select>
-          </el-space>
-        </el-col>
-        <el-col :span="8" class="text-right">
-          <el-button type="primary" @click="handleCreate" :icon="Plus">新建维护登记</el-button>
-        </el-col>
-      </el-row>
-    </div>
+      <div class="hero-aside">
+        <div class="mini-card">
+          <span>待处理</span>
+          <strong>{{ stats.pending }}</strong>
+        </div>
+        <div class="mini-card">
+          <span>进行中</span>
+          <strong>{{ stats.inProgress }}</strong>
+        </div>
+      </div>
+    </section>
 
-    <!-- 筛选统计信息 -->
-    <div class="filter-stats" v-if="total > 0 || statusFilter || maintenanceStatusFilter">
-      <el-tag type="info" size="small" v-if="maintenanceStatusFilter">
-        {{ getMaintenanceStatusFilterText(maintenanceStatusFilter) }}: {{ total }} 条记录
-      </el-tag>
-      <el-tag type="info" size="small" v-if="statusFilter" style="margin-left: 8px;">
-        {{ getMaintenanceStatusText(statusFilter) }}: {{ total }} 条记录
-      </el-tag>
-      <el-tag type="warning" size="small" v-if="total === 0 && (statusFilter || maintenanceStatusFilter)" style="margin-left: 8px;">
-        当前筛选条件下无记录
-      </el-tag>
-    </div>
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="summary-label">总任务数</span>
+        <strong>{{ stats.total }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">待处理</span>
+        <strong>{{ stats.pending }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">进行中</span>
+        <strong>{{ stats.inProgress }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">已完成</span>
+        <strong>{{ stats.completed }}</strong>
+      </article>
+    </section>
 
-    <!-- 维护任务表格 -->
-    <div class="table-container">
-      <el-table
-          :data="maintenanceList"
-          class="maintenance-table"
-          :header-cell-style="headerCellStyle"
-          :cell-style="cellStyle"
-          @row-click="handleRowClick"
-          v-loading="loading"
-          stripe
-      >
-        <el-table-column prop="id" label="ID" width="80" />
+    <section class="control-card">
+      <div class="control-copy">
+        <h2>任务筛选</h2>
+        <p>和设施、预约、违规页保持同类布局一致，只保留高频筛选和核心动作。</p>
+      </div>
 
-        <el-table-column prop="facilityName" label="设施名称" min-width="150">
+      <div class="control-actions">
+        <el-select v-model="maintenanceStatusFilter" clearable placeholder="维护完成度" @change="handleFilterChange">
+          <el-option label="全部记录" value="" />
+          <el-option label="已维护" value="MAINTAINED" />
+          <el-option label="未维护" value="UNMAINTAINED" />
+        </el-select>
+        <el-select v-model="statusFilter" clearable placeholder="任务状态" @change="handleFilterChange">
+          <el-option label="全部状态" value="" />
+          <el-option label="待处理" value="PENDING" />
+          <el-option label="进行中" value="IN_PROGRESS" />
+          <el-option label="已完成" value="COMPLETED" />
+          <el-option label="已取消" value="CANCELLED" />
+        </el-select>
+        <el-button type="primary" @click="openCreateDialog">新建维护</el-button>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <el-table :data="pagedList" v-loading="loading" stripe>
+        <el-table-column prop="facilityName" label="场地" min-width="160" />
+        <el-table-column label="维护类型" width="120" align="center">
           <template #default="{ row }">
-            <div class="facility-info">
-              <el-icon><Box /></el-icon>
-              <span class="facility-name">{{ row.facilityName }}</span>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="maintenanceType" label="维护类型" width="100">
-          <template #default="{ row }">
-            <el-tag
-                :type="getMaintenanceTypeTag(row.maintenanceType)"
-                size="small"
-            >
+            <el-tag :type="getMaintenanceTypeTag(row.maintenanceType)" effect="light">
               {{ getMaintenanceTypeText(row.maintenanceType) }}
             </el-tag>
           </template>
         </el-table-column>
-
-        <el-table-column prop="maintainer" label="设施管理员" width="100">
+        <el-table-column prop="maintainer" label="负责人" min-width="110" />
+        <el-table-column prop="description" label="维护描述" min-width="220" show-overflow-tooltip />
+        <el-table-column label="计划时间" min-width="210">
           <template #default="{ row }">
-            <span>{{ row.maintainer || '-' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="description" label="维护描述" min-width="180" align="center">
-          <template #default="{ row }">
-            <div class="description-info">{{ row.description }}</div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="计划时间" width="180" align="center">
-          <template #default="{ row }">
-            <div class="time-info">
-              <el-icon><Clock /></el-icon>
-              <span>{{ formatMaintenanceTime(row) }}</span>
+            <div class="time-stack">
+              <span>{{ row.startTime ? formatDateTime(row.startTime) : '未安排开始时间' }}</span>
+              <small>{{ row.endTime ? `结束：${formatDateTime(row.endTime)}` : '结束时间待定' }}</small>
             </div>
           </template>
         </el-table-column>
-
-        <el-table-column prop="status" label="任务状态" width="100" align="center">
+        <el-table-column label="状态" width="110" align="center">
           <template #default="{ row }">
-            <el-tag
-                :type="getMaintenanceStatusType(row.status)"
-                class="status-tag"
-                effect="light"
-            >
-              {{ getMaintenanceStatusText(row.status) }}
+            <el-tag :type="getStatusType(row.status)" effect="light">
+              {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-
-        <el-table-column prop="cost" label="费用" width="70">
+        <el-table-column label="费用" width="110" align="center">
           <template #default="{ row }">
-            <span>{{ row.cost ? `¥${row.cost}` : '-' }}</span>
+            {{ formatCurrency(row.cost) }}
           </template>
         </el-table-column>
-
-        <el-table-column prop="result" label="结果" min-width="120" show-overflow-tooltip>
+        <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
-            <span>{{ row.result || '-' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="操作" width="180" align="center" fixed="right">
-          <template #default="{ row }">
-            <div class="action-buttons">
+            <div class="row-actions">
+              <el-button link type="primary" @click.stop="openDetail(row)">查看</el-button>
               <el-button
-                  size="small"
-                  type="primary"
-                  :plain="true"
-                  class="action-btn edit-btn"
-                  @click.stop="handleEdit(row)"
-                  :disabled="row.status === 'COMPLETED' || row.status === 'CANCELLED'"
+                link
+                type="success"
+                :disabled="row.status === 'COMPLETED' || row.status === 'CANCELLED'"
+                @click.stop="openEditDialog(row)"
               >
-                <el-icon><EditPen /></el-icon>
                 编辑
               </el-button>
               <el-button
-                  size="small"
-                  type="success"
-                  :plain="true"
-                  class="action-btn complete-btn"
-                  @click.stop="handleComplete(row)"
-                  :disabled="row.status !== 'PENDING' && row.status !== 'IN_PROGRESS'"
+                link
+                type="warning"
+                :disabled="!['PENDING', 'IN_PROGRESS'].includes(row.status)"
+                @click.stop="openCompleteDialog(row)"
               >
-                <el-icon><Check /></el-icon>
                 完成
               </el-button>
             </div>
@@ -178,250 +118,203 @@
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
-      <div class="pagination-container" v-if="total > 0">
+      <div class="pagination-wrap" v-if="filteredList.length">
         <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-            class="custom-pagination"
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="filteredList.length"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
         />
       </div>
+    </section>
 
-    </div>
+    <el-dialog v-model="detailDialogVisible" title="维护详情" width="700px">
+      <div v-if="currentRow" class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">场地名称</span>
+          <strong>{{ currentRow.facilityName || '-' }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">维护类型</span>
+          <strong>{{ getMaintenanceTypeText(currentRow.maintenanceType) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">负责人</span>
+          <strong>{{ currentRow.maintainer || '-' }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">任务状态</span>
+          <strong>{{ getStatusText(currentRow.status) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">开始时间</span>
+          <strong>{{ formatDateTime(currentRow.startTime) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">结束时间</span>
+          <strong>{{ formatDateTime(currentRow.endTime) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">费用</span>
+          <strong>{{ formatCurrency(currentRow.cost) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">创建时间</span>
+          <strong>{{ formatDateTime(currentRow.createdAt) }}</strong>
+        </div>
+        <div class="detail-item full">
+          <span class="detail-label">维护描述</span>
+          <p>{{ currentRow.description || '-' }}</p>
+        </div>
+        <div class="detail-item full">
+          <span class="detail-label">处理结果</span>
+          <p>{{ currentRow.result || '尚未填写' }}</p>
+        </div>
+      </div>
+    </el-dialog>
 
-    <!-- 编辑/创建对话框 -->
     <el-dialog
-        v-model="dialogVisible"
-        :title="dialogTitle"
-        width="600px"
-        class="maintenance-dialog"
-        :close-on-click-modal="false"
+      v-model="editorDialogVisible"
+      :title="editorMode === 'create' ? '新建维护登记' : '编辑维护登记'"
+      width="620px"
+      destroy-on-close
     >
-      <div class="dialog-header">
-        <div class="dialog-title-icon">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <span class="dialog-title-text">{{ dialogTitle }}</span>
-      </div>
-
-      <div class="dialog-content">
-        <el-form
-            :model="form"
-            :rules="rules"
-            ref="formRef"
-            class="maintenance-form"
-            label-width="100px"
-        >
-          <el-form-item label="设施名称" prop="facilityId" align="center">
-            <el-select
-                v-model="form.facilityId"
-                placeholder="直接选择或搜索选择设施"
-                style="width: 100%"
-                :disabled="!!currentRow.id"
-                filterable
-                remote
-                :remote-method="searchFacilities"
-                :loading="facilityLoading"
-            >
-              <el-option
-                  v-for="facility in filteredFacilityOptions"
-                  :key="facility.id"
-                  :label="facility.name"
-                  :value="facility.id"
-              />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="设施管理员" prop="maintainer" align="center">
-            <el-input
-                v-model="form.maintainer"
-                placeholder="请输入设施管理员姓名或用户名"
-                maxlength="50"
-                :disabled="true"
-            >
-              <template #prefix>
-                <el-icon><User /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
-
-          <el-form-item label="维护类型" prop="maintenanceType" align="center">
-            <el-radio-group v-model="form.maintenanceType">
-              <el-radio label="ROUTINE">常规维护</el-radio>
-              <el-radio label="REPAIR">故障维修</el-radio>
-              <el-radio label="UPGRADE">设备升级</el-radio>
-            </el-radio-group>
-          </el-form-item>
-
-          <el-form-item label="维护描述" prop="description" align="center">
-            <el-input
-                type="textarea"
-                v-model="form.description"
-                :rows="4"
-                placeholder="请输入维护任务的详细描述..."
-                maxlength="500"
-                show-word-limit
-            />
-          </el-form-item>
-
-          <el-form-item label="开始时间" prop="startTime" align="center">
-            <el-date-picker
-                v-model="form.startTime"
-                type="datetime"
-                placeholder="选择开始时间"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
-                style="width: 100%"
-            />
-          </el-form-item>
-
-          <!-- 新增时隐藏以下字段 -->
-          <template v-if="form.id">
-            <el-form-item label="结束时间" prop="endTime" align="center">
-              <el-date-picker
-                  v-model="form.endTime"
-                  type="datetime"
-                  placeholder="选择结束时间"
-                  format="YYYY-MM-DD HH:mm:ss"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                  style="width: 100%"
-              />
-            </el-form-item>
-
-            <el-form-item label="维护结果" prop="result" align="center">
-              <el-input
-                  type="textarea"
-                  v-model="form.result"
-                  :rows="3"
-                  placeholder="请输入维护结果..."
-                  maxlength="500"
-                  show-word-limit
-              />
-            </el-form-item>
-
-            <el-form-item label="费用" prop="cost" align="center">
-              <el-input-number
-                  v-model="form.cost"
-                  :precision="2"
-                  :step="0.1"
-                  :min="0"
-                  placeholder="请输入费用..."
-                  style="width: 100%"
-              />
-            </el-form-item>
-
-            <el-form-item label="状态" prop="status" align="center">
-              <el-select v-model="form.status" style="width: 100%" placeholder="请选择状态">
-                <el-option label="待处理" value="PENDING" />
-                <el-option label="进行中" value="IN_PROGRESS" />
-                <el-option label="已完成" value="COMPLETED" />
-                <el-option label="已取消" value="CANCELLED" />
-              </el-select>
-            </el-form-item>
-          </template>
-        </el-form>
-      </div>
-
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button size="large" @click="dialogVisible = false" class="cancel-btn">
-            取消
-          </el-button>
-          <el-button
-              type="primary"
-              size="large"
-              :loading="submitLoading"
-              @click="handleSubmit"
-              class="submit-btn"
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item label="场地" prop="facilityId">
+          <el-select
+            v-model="form.facilityId"
+            filterable
+            style="width: 100%"
+            :disabled="editorMode === 'edit'"
+            placeholder="选择需要维护的场地"
           >
-            确认提交
-          </el-button>
-        </div>
+            <el-option
+              v-for="facility in facilityOptions"
+              :key="facility.id"
+              :label="facility.name"
+              :value="facility.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="维护类型" prop="maintenanceType">
+          <el-radio-group v-model="form.maintenanceType">
+            <el-radio-button label="ROUTINE">常规维护</el-radio-button>
+            <el-radio-button label="REPAIR">故障维修</el-radio-button>
+            <el-radio-button label="UPGRADE">设备升级</el-radio-button>
+            <el-radio-button label="OTHER">其他</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="开始时间" prop="startTime">
+          <el-date-picker
+            v-model="form.startTime"
+            type="datetime"
+            style="width: 100%"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            placeholder="选择开始时间"
+          />
+        </el-form-item>
+        <el-form-item v-if="editorMode === 'edit'" label="结束时间" prop="endTime">
+          <el-date-picker
+            v-model="form.endTime"
+            type="datetime"
+            style="width: 100%"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            placeholder="选择结束时间"
+          />
+        </el-form-item>
+        <el-form-item label="维护描述" prop="description">
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+            placeholder="说明故障现象、计划和现场处理建议"
+          />
+        </el-form-item>
+        <el-form-item v-if="editorMode === 'edit'" label="处理结果" prop="result">
+          <el-input
+            v-model="form.result"
+            type="textarea"
+            :rows="3"
+            maxlength="500"
+            show-word-limit
+            placeholder="补充处理结果"
+          />
+        </el-form-item>
+        <el-form-item v-if="editorMode === 'edit'" label="费用">
+          <el-input-number v-model="form.cost" :min="0" :step="10" style="width: 100%" />
+        </el-form-item>
+        <el-form-item v-if="editorMode === 'edit'" label="任务状态">
+          <el-select v-model="form.status" style="width: 100%">
+            <el-option label="待处理" value="PENDING" />
+            <el-option label="进行中" value="IN_PROGRESS" />
+            <el-option label="已完成" value="COMPLETED" />
+            <el-option label="已取消" value="CANCELLED" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editorDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">保存</el-button>
       </template>
     </el-dialog>
 
-    <!-- 维护完成结果输入对话框 -->
-    <el-dialog
-        v-model="completeDialogVisible"
-        title="维护完成确认"
-        width="500px"
-        class="complete-dialog"
-        :close-on-click-modal="false"
-    >
-      <div class="dialog-content">
-        <el-form label-width="80px">
-          <el-form-item label="维护结果">
-            <el-input
-                type="textarea"
-                v-model="completeResult"
-                :rows="4"
-                placeholder="请输入维护结果..."
-                maxlength="500"
-                show-word-limit
-            />
-          </el-form-item>
-          <el-form-item label="维护费用">
-            <el-input-number
-                v-model="completeCost"
-                :precision="2"
-                :step="0.1"
-                :min="0"
-                placeholder="请输入费用..."
-                style="width: 100%"
-            />
-          </el-form-item>
-        </el-form>
-      </div>
+    <el-dialog v-model="completeDialogVisible" title="确认完成维护" width="520px" destroy-on-close>
+      <el-form label-position="top">
+        <el-form-item label="处理结果">
+          <el-input
+            v-model="completeResult"
+            type="textarea"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+            placeholder="填写本次维护的处理结果"
+          />
+        </el-form-item>
+        <el-form-item label="维护费用">
+          <el-input-number v-model="completeCost" :min="0" :step="10" style="width: 100%" />
+        </el-form-item>
+      </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="completeDialogVisible = false">取消</el-button>
-          <el-button type="success" @click="submitCompleteWithLocalTime">确认完成</el-button>
-        </div>
+        <el-button @click="completeDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitComplete">确认完成</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, EditPen, Check, Box, Clock, User } from '@element-plus/icons-vue';
-import { maintenanceAPI, facilityAPI } from '../../api';
-import { ElInputNumber } from 'element-plus';
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { facilityAPI, maintenanceAPI } from '../../api'
 
-const maintenanceList = ref([]);
-const dialogVisible = ref(false);
-const completeDialogVisible = ref(false);
-const dialogTitle = ref('');
-const loading = ref(false);
-const submitLoading = ref(false);
-const formRef = ref(null);
-const currentPage = ref(1);
-const pageSize = ref(10);
-const total = ref(0);
-const pagination = ref({
-  page: 1,
-  size: 10
-});
+const route = useRoute()
+const router = useRouter()
 
-const currentRow = ref({});
-const completeResult = ref('');
-const completeCost = ref(0);
-const currentUser = ref({});
-const statusFilter = ref('');
-const maintenanceStatusFilter = ref(''); // 已维护/未维护/所有记录筛选
-const facilityLoading = ref(false);
-const filteredFacilityOptions = ref([]);
-const form = ref({
+const loading = ref(false)
+const submitLoading = ref(false)
+const maintenanceList = ref([])
+const facilityOptions = ref([])
+const currentRow = ref(null)
+const detailDialogVisible = ref(false)
+const editorDialogVisible = ref(false)
+const completeDialogVisible = ref(false)
+const editorMode = ref('create')
+const currentUser = ref({})
+const currentPage = ref(1)
+const pageSize = ref(10)
+const statusFilter = ref('')
+const maintenanceStatusFilter = ref('')
+const formRef = ref(null)
+const completeResult = ref('')
+const completeCost = ref(0)
+
+const form = reactive({
   id: null,
   facilityId: null,
   maintainerId: null,
@@ -429,786 +322,535 @@ const form = ref({
   description: '',
   maintainer: '',
   cost: null,
-  startTime: null,
-  endTime: null,
+  startTime: '',
+  endTime: '',
   result: '',
   status: 'PENDING'
-});
+})
 
-const facilityOptions = ref([]);
-const route = useRoute();
-const router = useRouter();
-
-const formatLocalDateTime = (date = new Date()) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-};
-
-
-
-// 计算属性：维护任务统计
-const maintenanceStats = computed(() => {
-  const allData = maintenanceList.value;
-  const total = allData.length;
-  const maintained = allData.filter(item => item.status === 'COMPLETED').length;
-  const unmaintained = allData.filter(item => item.status === 'PENDING' || item.status === 'IN_PROGRESS').length;
-  
-  return {
-    total,
-    maintained,
-    unmaintained,
-    maintainedPercent: total > 0 ? Math.round((maintained / total) * 100) : 0,
-    unmaintainedPercent: total > 0 ? Math.round((unmaintained / total) * 100) : 0
-  };
-});
-
-// 表单验证规则
 const rules = {
-  facilityId: [
-    { required: true, message: '请选择设施', trigger: 'change' }
-  ],
-  maintenanceType: [
-    { required: true, message: '请选择维护类型', trigger: 'change' }
-  ],
-  description: [
-    { required: true, message: '请输入维护描述...', trigger: 'blur' },
-    { max: 500, message: '描述长度不能超过500个字符', trigger: 'blur' }
-  ],
-  startTime: [
-    { required: false, message: '请选择开始时间', trigger: 'change' }
-  ],
-  endTime: [
-    { required: false, message: '请选择结束时间', trigger: 'change' }
-  ]
-};
+  facilityId: [{ required: true, message: '请选择场地', trigger: 'change' }],
+  maintenanceType: [{ required: true, message: '请选择维护类型', trigger: 'change' }],
+  description: [{ required: true, message: '请填写维护描述', trigger: 'blur' }]
+}
 
-const headerCellStyle = {
-  backgroundColor: '#f8f9fa',
-  fontWeight: 'bold',
-  color: '#333'
-};
+const stats = computed(() => ({
+  total: maintenanceList.value.length,
+  pending: maintenanceList.value.filter((item) => item.status === 'PENDING').length,
+  inProgress: maintenanceList.value.filter((item) => item.status === 'IN_PROGRESS').length,
+  completed: maintenanceList.value.filter((item) => item.status === 'COMPLETED').length
+}))
 
-const cellStyle = {
-  padding: '12px 0'
-};
+const filteredList = computed(() => {
+  let list = [...maintenanceList.value]
+
+  if (maintenanceStatusFilter.value === 'MAINTAINED') {
+    list = list.filter((item) => item.status === 'COMPLETED')
+  } else if (maintenanceStatusFilter.value === 'UNMAINTAINED') {
+    list = list.filter((item) => ['PENDING', 'IN_PROGRESS'].includes(item.status))
+  }
+
+  if (statusFilter.value) {
+    list = list.filter((item) => item.status === statusFilter.value)
+  }
+
+  return list
+})
+
+const pagedList = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredList.value.slice(start, end)
+})
+
+onMounted(() => {
+  const userInfo = localStorage.getItem('userInfo')
+  if (userInfo) {
+    currentUser.value = JSON.parse(userInfo)
+  }
+  syncFiltersFromQuery(route.query)
+  loadFacilities()
+  loadMaintenanceList()
+})
+
+watch(
+  () => route.query,
+  (query) => {
+    syncFiltersFromQuery(query)
+  }
+)
+
+const syncFiltersFromQuery = (query) => {
+  statusFilter.value = query.status || ''
+  maintenanceStatusFilter.value = query.maintenanceStatus || ''
+  currentPage.value = 1
+}
+
+const updateQueryParams = () => {
+  const query = {}
+  if (statusFilter.value) {
+    query.status = statusFilter.value
+  }
+  if (maintenanceStatusFilter.value) {
+    query.maintenanceStatus = maintenanceStatusFilter.value
+  }
+  router.replace({ query })
+}
 
 const loadMaintenanceList = async () => {
   try {
-    loading.value = true;
-    
-    // 确保分页参数正确
-    console.log('Loading data - Page:', currentPage.value, 'Size:', pageSize.value);
-
-    let allData = [];
-    
-    // 如果当前用户是维护人员，只加载自己的维护任务
-    if (currentUser.value.role === 'MAINTAINER' && currentUser.value.id) {
-      const res = await maintenanceAPI.getByMaintainerId(currentUser.value.id);
-      allData = res.data || [];
-    } else {
-      // 获取所有维护任务
-      const res = await maintenanceAPI.list();
-      allData = res.data || [];
-    }
-    
-    // 应用已维护/未维护筛选
-    if (maintenanceStatusFilter.value) {
-      if (maintenanceStatusFilter.value === 'MAINTAINED') {
-        // 已维护：状态为已完成
-        allData = allData.filter(item => item.status === 'COMPLETED');
-      } else if (maintenanceStatusFilter.value === 'UNMAINTAINED') {
-        // 未维护：状态为待处理或进行中
-        allData = allData.filter(item => item.status === 'PENDING' || item.status === 'IN_PROGRESS');
-      }
-    }
-    
-    // 应用任务状态筛选
-    if (statusFilter.value) {
-      allData = allData.filter(item => item.status === statusFilter.value);
-    }
-    
-    // 计算总数
-    total.value = allData.length;
-    
-    // 计算当前页的数据
-    const startIndex = (currentPage.value - 1) * pageSize.value;
-    const endIndex = startIndex + pageSize.value;
-    maintenanceList.value = allData.slice(startIndex, endIndex);
-    
-    console.log('Data loaded successfully - Total:', total.value, 'Current page data:', maintenanceList.value.length);
-
+    loading.value = true
+    const userId = currentUser.value.id
+    const response = userId
+      ? await maintenanceAPI.getByMaintainerId(userId)
+      : await maintenanceAPI.list()
+    maintenanceList.value = response.data || []
   } catch (error) {
-    console.error('加载维护任务列表失败:', error);
-    ElMessage.error('加载维护任务列表失败');
-    maintenanceList.value = [];
-    total.value = 0;
+    console.error('加载维护任务失败:', error)
+    ElMessage.error('加载维护任务失败')
+    maintenanceList.value = []
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const loadFacilities = async () => {
   try {
-    const res = await facilityAPI.list();
-    facilityOptions.value = res.data || [];
-    filteredFacilityOptions.value = res.data || [];
+    const response = await facilityAPI.list()
+    facilityOptions.value = response.data || []
   } catch (error) {
-    console.error('加载设施列表失败:', error);
-    ElMessage.error('加载设施列表失败');
+    console.error('加载场地选项失败:', error)
+    ElMessage.error('加载场地选项失败')
   }
-};
+}
 
-const searchFacilities = async (keyword) => {
-  if (!keyword || keyword.trim() === '') {
-    filteredFacilityOptions.value = facilityOptions.value;
-    return;
-  }
-  
-  facilityLoading.value = true;
-  try {
-    const res = await facilityAPI.search(keyword);
-    filteredFacilityOptions.value = res.data || [];
-  } catch (error) {
-    console.error('搜索设施失败:', error);
-    // 如果搜索API失败，使用本地过滤
-    filteredFacilityOptions.value = facilityOptions.value.filter(facility =>
-      facility.name.toLowerCase().includes(keyword.toLowerCase())
-    );
-  } finally {
-    facilityLoading.value = false;
-  }
-};
+const handleFilterChange = () => {
+  currentPage.value = 1
+  updateQueryParams()
+}
 
-const handleCreate = () => {
-  currentRow.value = {};
-  form.value = {
-    id: null,
-    facilityId: null,
-    maintainerId: currentUser.value.id || null,
-    maintenanceType: 'ROUTINE',
-    description: '',
-    maintainer: currentUser.value.realName || currentUser.value.username || '',
-    cost: null,
-    startTime: null,
-    endTime: null,
-    result: '',
-    status: 'PENDING' // 默认状态为待处理
-  };
-  dialogTitle.value = '新建维护登记';
-  dialogVisible.value = true;
-};
+const handleSizeChange = (size) => {
+  pageSize.value = size
+  currentPage.value = 1
+}
 
-const handleEdit = (row) => {
-  currentRow.value = row;
-  form.value = {
-    id: row.id,
-    facilityId: row.facilityId,
-    maintainerId: row.maintainerId || currentUser.value.id || null,
-    maintenanceType: row.maintenanceType,
-    description: row.description,
-    maintainer: row.maintainer || currentUser.value.realName || currentUser.value.username || '',
-    cost: row.cost || null,
-    startTime: row.startTime,
-    endTime: row.endTime,
-    result: row.result || '',
-    status: row.status || 'PENDING'
-  };
-  dialogTitle.value = '编辑维护任务';
-  dialogVisible.value = true;
-};
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+}
 
-const handleComplete = async (row) => {
-  currentRow.value = row;
-  completeResult.value = '';
-  completeCost.value = row.cost || 0;
-  completeDialogVisible.value = true;
-};
+const openDetail = (row) => {
+  currentRow.value = row
+  detailDialogVisible.value = true
+}
 
-const handleCompleteSubmit = async () => {
-  return submitCompleteWithLocalTime();
-};
+const resetForm = () => {
+  form.id = null
+  form.facilityId = null
+  form.maintainerId = currentUser.value.id || null
+  form.maintenanceType = 'ROUTINE'
+  form.description = ''
+  form.maintainer = currentUser.value.realName || currentUser.value.username || ''
+  form.cost = null
+  form.startTime = ''
+  form.endTime = ''
+  form.result = ''
+  form.status = 'PENDING'
+}
 
-const submitCompleteWithLocalTime = async () => {
-  if (!completeResult.value.trim()) {
-    ElMessage.error('请输入处理结果');
-    return;
-  }
+const openCreateDialog = () => {
+  resetForm()
+  editorMode.value = 'create'
+  editorDialogVisible.value = true
+}
 
-  try {
-    const currentEndTime = new Date();
-
-    if (currentRow.value.startTime) {
-      const startTime = new Date(currentRow.value.startTime);
-      if (currentEndTime < startTime) {
-        ElMessage.error('完成时间不能早于开始时间');
-        return;
-      }
-    }
-
-    const updateData = {
-      ...currentRow.value,
-      status: 'COMPLETED',
-      endTime: formatLocalDateTime(currentEndTime),
-      result: completeResult.value.trim(),
-      cost: completeCost.value
-    };
-
-    await maintenanceAPI.complete(currentRow.value.id, updateData);
-    ElMessage.success('维护任务已完成');
-    completeDialogVisible.value = false;
-    loadMaintenanceList();
-  } catch (error) {
-    console.error('完成维护任务失败:', error);
-    ElMessage.error(error?.message || error?.response?.data?.message || '完成维护任务失败');
-  }
-};
+const openEditDialog = (row) => {
+  currentRow.value = row
+  form.id = row.id
+  form.facilityId = row.facilityId
+  form.maintainerId = row.maintainerId || currentUser.value.id || null
+  form.maintenanceType = normalizeMaintenanceType(row.maintenanceType)
+  form.description = row.description || ''
+  form.maintainer = row.maintainer || currentUser.value.realName || currentUser.value.username || ''
+  form.cost = row.cost ?? null
+  form.startTime = row.startTime || ''
+  form.endTime = row.endTime || ''
+  form.result = row.result || ''
+  form.status = row.status || 'PENDING'
+  editorMode.value = 'edit'
+  editorDialogVisible.value = true
+}
 
 const handleSubmit = async () => {
   try {
-    await formRef.value.validate();
-    
-    // 验证时间逻辑：只在编辑模式下验证（编辑模式下有结束时间字段）
-    if (form.value.id && form.value.startTime && form.value.endTime) {
-      const startTime = new Date(form.value.startTime);
-      const endTime = new Date(form.value.endTime);
-      if (endTime < startTime) {
-        ElMessage.error('结束时间不能早于开始时间');
-        return;
+    await formRef.value.validate()
+    submitLoading.value = true
+
+    if (editorMode.value === 'create') {
+      const response = await maintenanceAPI.create({ ...form })
+      if (response.code === 200) {
+        ElMessage.success('维护登记创建成功')
+      } else {
+        ElMessage.error(response.message || '维护登记创建失败')
+        return
+      }
+    } else {
+      const response = await maintenanceAPI.update(form.id, { ...form })
+      if (response.code === 200) {
+        ElMessage.success('维护登记更新成功')
+      } else {
+        ElMessage.error(response.message || '维护登记更新失败')
+        return
       }
     }
-    
-    // 确保维护人员信息完整
-    if (!form.value.maintainerId) {
-      form.value.maintainerId = currentUser.value.id;
-    }
-    if (!form.value.maintainer) {
-      form.value.maintainer = currentUser.value.realName || currentUser.value.username;
-    }
-    
-    submitLoading.value = true;
 
-    if (form.value.id) {
-      // 更新维护任务
-      await maintenanceAPI.update(form.value.id, form.value);
-      ElMessage.success('维护任务更新成功');
-    } else {
-      // 创建新的维护任务，默认状态为待处理
-      const createData = {
-        ...form.value,
-        status: 'PENDING' // 新增时强制设置为待处理
-      };
-      await maintenanceAPI.create(createData);
-      ElMessage.success('维护任务创建成功');
-    }
-
-    dialogVisible.value = false;
-    loadMaintenanceList();
+    editorDialogVisible.value = false
+    loadMaintenanceList()
   } catch (error) {
-    console.error('提交失败:', error);
-    ElMessage.error('提交失败，请重试');
+    console.error('提交维护登记失败:', error)
+    ElMessage.error('提交维护登记失败')
   } finally {
-    submitLoading.value = false;
+    submitLoading.value = false
   }
-};
+}
 
-const handleRowClick = (row) => {
-  // 可以在这里处理行点击事件，比如查看详情
-  console.log('Clicked row:', row);
-};
+const openCompleteDialog = (row) => {
+  currentRow.value = row
+  completeResult.value = row.result || ''
+  completeCost.value = Number(row.cost || 0)
+  completeDialogVisible.value = true
+}
 
-const getMaintenanceTypeTag = (type) => {
-  switch (type) {
-    case 'ROUTINE': return 'primary';
-    case 'REPAIR': return 'danger';
-    case 'UPGRADE': return 'info';
-    default: return 'primary';
+const submitComplete = async () => {
+  if (!completeResult.value.trim()) {
+    ElMessage.warning('请填写处理结果')
+    return
   }
-};
 
-const getMaintenanceStatusType = (status) => {
-  switch (status) {
-    case 'PENDING': return 'warning';
-    case 'IN_PROGRESS': return '';
-    case 'COMPLETED': return 'success';
-    case 'CANCELLED': return 'info';
-    default: return 'info';
-  }
-};
-
-const getMaintenanceStatusText = (status) => {
-  switch (status) {
-    case 'PENDING': return '待处理';
-    case 'IN_PROGRESS': return '进行中';
-    case 'COMPLETED': return '已完成';
-    case 'CANCELLED': return '已取消';
-    default: return status;
-  }
-};
-
-const getMaintenanceTypeText = (type) => {
-  switch (type) {
-    case 'ROUTINE': return '常规维护';
-    case 'REPAIR': return '故障维修';
-    case 'UPGRADE': return '设备升级';
-    default: return type;
-  }
-};
-
-const getMaintenanceStatusFilterText = (filter) => {
-  switch (filter) {
-    case 'MAINTAINED': return '已维护';
-    case 'UNMAINTAINED': return '未维护';
-    default: return '所有记录';
-  }
-};
-
-const formatMaintenanceTime = (row) => {
-  if (!row.startTime && !row.endTime) {
-    return '未安排';
-  }
-  if (row.startTime && !row.endTime) {
-    return `开始: ${row.startTime}`;
-  }
-  if (!row.startTime && row.endTime) {
-    return `结束: ${row.endTime}`;
-  }
-  return `${row.startTime} - ${row.endTime}`;
-};
-
-// 分页相关函数
-const handleSizeChange = (size) => {
-  pageSize.value = size;
-  pagination.value.size = size;
-  currentPage.value = 1;
-  pagination.value.page = 1;
-  loadMaintenanceList();
-};
-
-const handleCurrentChange = (page) => {
-  currentPage.value = page;
-  pagination.value.page = page;
-  loadMaintenanceList();
-};
-
-const handleStatusFilter = () => {
-  // 状态筛选会在loadMaintenanceList中处理
-  currentPage.value = 1;
-  pagination.value.page = 1;
-  loadMaintenanceList();
-  
-  // 更新URL查询参数
-  updateQueryParams();
-};
-
-// 更新URL查询参数
-const updateQueryParams = () => {
-  const query = {};
-  if (maintenanceStatusFilter.value) {
-    query.maintenanceStatus = maintenanceStatusFilter.value;
-  }
-  if (statusFilter.value) {
-    query.status = statusFilter.value;
-  }
-  
-  router.replace({
-    query: query
-  });
-};
-
-// 处理路由查询参数
-const handleRouteQuery = (query) => {
-  if (query.maintenanceStatus !== undefined) {
-    maintenanceStatusFilter.value = query.maintenanceStatus;
-    currentPage.value = 1;
-    pagination.value.page = 1;
-    loadMaintenanceList();
-  }
-};
-
-const handleMaintenanceStatusFilter = () => {
-  // 已维护/未维护筛选
-  currentPage.value = 1;
-  pagination.value.page = 1;
-  loadMaintenanceList();
-  
-  // 更新URL查询参数
-  updateQueryParams();
-};
-
-// 点击统计项应用筛选
-const applyFilterByClick = (filterType) => {
-  if (filterType === 'maintained') {
-    maintenanceStatusFilter.value = 'MAINTAINED';
-  } else if (filterType === 'unmaintained') {
-    maintenanceStatusFilter.value = 'UNMAINTAINED';
-  } else {
-    maintenanceStatusFilter.value = '';
-  }
-  currentPage.value = 1;
-  pagination.value.page = 1;
-  loadMaintenanceList();
-};
-
-const getCurrentUser = () => {
   try {
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      currentUser.value = JSON.parse(userInfo);
-      console.log('当前用户信息:', currentUser.value);
+    const response = await maintenanceAPI.complete(currentRow.value.id, {
+      result: completeResult.value.trim(),
+      cost: completeCost.value,
+      endTime: formatDateTimeForBackend(new Date())
+    })
+    if (response.code === 200) {
+      ElMessage.success('维护任务已完成')
+      completeDialogVisible.value = false
+      loadMaintenanceList()
+      return
     }
+    ElMessage.error(response.message || '维护任务完成失败')
   } catch (error) {
-    console.error('获取当前用户信息失败:', error);
+    console.error('完成维护任务失败:', error)
+    ElMessage.error('完成维护任务失败')
   }
-};
+}
 
-onMounted(() => {
-  getCurrentUser();
-  loadMaintenanceList();
-  loadFacilities();
-  
-  // 监听路由查询参数变化
-  watch(() => route.query, (newQuery) => {
-    handleRouteQuery(newQuery);
-  }, { immediate: true });
-});
+const normalizeMaintenanceType = (type) => {
+  const map = {
+    '常规维护': 'ROUTINE',
+    ROUTINE: 'ROUTINE',
+    '故障维修': 'REPAIR',
+    REPAIR: 'REPAIR',
+    '设备升级': 'UPGRADE',
+    UPGRADE: 'UPGRADE',
+    OTHER: 'OTHER',
+    '其他': 'OTHER'
+  }
+  return map[type] || 'OTHER'
+}
+
+const getMaintenanceTypeText = (type) => ({
+  ROUTINE: '常规维护',
+  REPAIR: '故障维修',
+  UPGRADE: '设备升级',
+  OTHER: '其他'
+}[normalizeMaintenanceType(type)] || type || '-')
+
+const getMaintenanceTypeTag = (type) => ({
+  ROUTINE: 'success',
+  REPAIR: 'danger',
+  UPGRADE: 'warning',
+  OTHER: 'info'
+}[normalizeMaintenanceType(type)] || 'info')
+
+const getStatusText = (status) => ({
+  PENDING: '待处理',
+  IN_PROGRESS: '进行中',
+  COMPLETED: '已完成',
+  CANCELLED: '已取消'
+}[status] || status || '-')
+
+const getStatusType = (status) => ({
+  PENDING: 'warning',
+  IN_PROGRESS: 'primary',
+  COMPLETED: 'success',
+  CANCELLED: 'info'
+}[status] || 'info')
+
+const formatDateTime = (value) => {
+  if (!value) {
+    return '-'
+  }
+  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+}
+
+const formatDateTimeForBackend = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+const formatCurrency = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+  const numberValue = Number(value)
+  if (Number.isNaN(numberValue)) {
+    return value
+  }
+  return `¥${numberValue.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
 </script>
 
 <style scoped>
-.maintainer-maintenance {
-  padding: 20px;
-}
-
-.page-header {
-  margin-bottom: 24px;
-  position: relative;
-}
-
-.header-decoration {
-  position: absolute;
-  top: -10px;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #409eff, #67c23a, #e6a23c, #f56c6c);
-  border-radius: 2px;
-}
-
-.header-content {
-  background: white;
+.maintenance-theme {
+  --theme-main: #2563eb;
+  --theme-soft: rgba(37, 99, 235, 0.12);
+  --theme-border: rgba(37, 99, 235, 0.12);
+  --theme-shadow: rgba(37, 99, 235, 0.16);
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  position: relative;
-  z-index: 1;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.18), transparent 26%),
+    linear-gradient(180deg, #eff6ff 0%, #f8fbff 48%, #eef4ff 100%);
 }
 
-.page-title {
-  display: flex;
-  align-items: center;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2d3d;
-  margin: 0 0 8px 0;
+.page-hero,
+.control-card,
+.panel-card {
+  animation: rise-in 0.55s ease both;
 }
 
-.title-icon {
-  margin-right: 12px;
+.page-hero {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid var(--theme-border);
+  box-shadow: 0 24px 60px var(--theme-shadow);
 }
 
-.title-icon svg {
-  width: 32px;
-  height: 32px;
-  vertical-align: middle;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: #8492a6;
-  margin: 0;
-}
-
-.user-info {
-  margin-top: 8px;
-}
-
-.operations-container {
-  margin-bottom: 20px;
-  background: white;
-  padding: 16px 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.filter-stats {
-  margin-bottom: 16px;
-  padding: 12px 20px;
-  background: #f8f9fa;
-  border-radius: 6px;
-}
-
-.el-space {
+.eyebrow {
   display: inline-flex;
-  vertical-align: middle;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.el-space {
-  display: inline-flex;
-  vertical-align: middle;
-}
-
-.pagination {
-  display: inline-block;
-}
-
-.table-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.maintenance-table {
-  width: 100%;
-}
-
-.facility-info {
-  display: flex;
-  align-items: center;
-}
-
-.facility-info .el-icon {
-  margin-right: 8px;
-  color: #409eff;
-}
-
-.facility-name {
-  font-weight: 500;
-  color: #303133;
-}
-
-.description-info {
-  color: #606266;
-  line-height: 1.5;
-}
-
-.time-info {
-  display: flex;
-  align-items: center;
-  color: #606266;
-}
-
-.time-info .el-icon {
-  margin-right: 4px;
-  font-size: 14px;
-}
-
-.status-tag {
-  border-radius: 4px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.action-btn {
-  margin: 0 2px;
-  border-radius: 6px;
   padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--theme-soft);
+  color: var(--theme-main);
   font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.edit-btn {
-  color: #409eff;
-  border-color: #b3d8ff;
+.hero-copy h1 {
+  margin: 14px 0 10px;
+  font-size: 32px;
+  color: #0f172a;
 }
 
-.edit-btn:hover {
-  background-color: #ecf5ff;
-  border-color: #409eff;
-  color: #409eff;
+.hero-copy p {
+  margin: 0;
+  color: #52606d;
+  line-height: 1.7;
 }
 
-.complete-btn {
-  color: #67c23a;
-  border-color: #c2e7b0;
+.hero-aside {
+  display: grid;
+  gap: 14px;
 }
 
-.complete-btn:hover {
-  background-color: #f0f9eb;
-  border-color: #67c23a;
-  color: #67c23a;
-}
-
-/* 对话框样式 */
-.maintenance-dialog .el-dialog__body {
-  padding: 20px;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.dialog-title-icon {
-  margin-right: 12px;
-}
-
-.dialog-title-icon svg {
-  width: 24px;
-  height: 24px;
-  vertical-align: middle;
-}
-
-.dialog-title-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.dialog-content {
-  padding: 0 10px;
-}
-
-.maintenance-form {
-  width: 100%;
-}
-
-.readonly-input {
-  background-color: #f5f7fa;
-  cursor: not-allowed;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 10px;
-}
-
-.cancel-btn {
-  width: 80px;
-}
-
-.submit-btn {
-  width: 100px;
-}
-
-/* 维护完成对话框样式 */
-.complete-dialog .el-dialog__body {
-  padding: 20px;
-}
-
-.complete-dialog .dialog-content {
-  padding: 0 10px;
-}
-
-.complete-dialog .dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 10px;
-}
-/* 分页容器 */
-.pagination-container {
-  padding: 20px 0;
-  display: flex;
-  justify-content: center;
-  background: white;
-  border-top: 1px solid #ebeef5;
-  margin-top: auto;
-}
-
-.custom-pagination {
-  display: flex;
-  justify-content: center;
-}
-
-/* 表格容器样式调整 */
-.table-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+.mini-card {
   display: flex;
   flex-direction: column;
-  min-height: 400px;
+  justify-content: center;
+  min-height: 110px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #edf4ff 0%, #ffffff 100%);
+  border: 1px solid var(--theme-border);
 }
 
-.maintenance-table {
-  width: 100%;
-  flex: 1;
+.mini-card span {
+  color: #667085;
+  font-size: 13px;
 }
 
-.maintenance-stats {
-  margin-bottom: 16px;
+.mini-card strong {
+  margin-top: 10px;
+  color: #12234a;
+  font-size: 24px;
 }
 
-.stats-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  color: white;
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
 }
 
-.stats-content {
+.summary-card {
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px rgba(17, 24, 39, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 46px rgba(17, 24, 39, 0.1);
+}
+
+.summary-label {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.summary-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.control-card,
+.panel-card {
+  margin-top: 20px;
+  padding: 22px 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 42px rgba(17, 24, 39, 0.08);
+}
+
+.control-card {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 18px;
+}
+
+.control-copy h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #15223a;
+}
+
+.control-copy p {
+  margin: 8px 0 0;
+  color: #667085;
+  font-size: 13px;
+}
+
+.control-actions {
+  display: flex;
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
 }
 
-.stat-item {
+.row-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
 }
 
-.stat-label {
-  font-size: 14px;
-  opacity: 0.9;
+.time-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.stat-value {
-  font-size: 20px;
-  font-weight: bold;
+.time-stack small {
+  color: #6b7280;
 }
 
-.stat-value.success {
-  color: #67c23a;
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
 }
 
-.stat-value.warning {
-  color: #e6a23c;
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.stat-percent {
+.detail-item {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f5f9ff;
+}
+
+.detail-item.full {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #6b7280;
   font-size: 12px;
-  opacity: 0.8;
 }
 
-.progress-container {
-  flex: 1;
-  min-width: 200px;
-  margin-left: 20px;
+.detail-item strong,
+.detail-item p {
+  margin: 0;
+  color: #0f172a;
+  line-height: 1.7;
 }
 
-.progress-container .el-progress {
-  width: 100%;
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+@media (max-width: 1200px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .page-hero,
+  .control-card {
+    grid-template-columns: 1fr;
+  }
+
+  .control-card {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 768px) {
+  .maintenance-theme {
+    padding: 16px;
+  }
+
+  .summary-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
-

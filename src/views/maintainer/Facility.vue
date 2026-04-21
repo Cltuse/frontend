@@ -1,865 +1,832 @@
 <template>
-  <div class="maintainer-facility">
-    <!-- 页面标题区域 -->
-    <div class="page-header">
-      <div class="header-decoration"></div>
-      <div class="header-content">
-        <h1 class="page-title">
-          <div class="title-icon">
-            <svg viewBox="0 0 24 24" fill="none">
-              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" stroke="currentColor" stroke-width="2"/>
-              <line x1="7" y1="2" x2="7" y2="22" stroke="currentColor" stroke-width="2"/>
-              <line x1="17" y1="2" x2="17" y2="22" stroke="currentColor" stroke-width="2"/>
-              <line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/>
-              <line x1="2" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="2"/>
-              <line x1="2" y1="17" x2="7" y2="17" stroke="currentColor" stroke-width="2"/>
-              <line x1="17" y1="17" x2="22" y2="17" stroke="currentColor" stroke-width="2"/>
-              <line x1="17" y1="7" x2="22" y2="7" stroke="currentColor" stroke-width="2"/>
-            </svg>
-          </div>
-          设施管理
-        </h1>
-        <p class="page-subtitle">查看设施信息及维护状态</p>
+  <div class="page-shell facility-theme">
+    <section class="page-hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Facility Operations</span>
+        <h1>设施管理</h1>
+        <p>统一查看本人负责场地的状态、预约安排和维护入口，详情页同步展示未来排期。</p>
       </div>
-    </div>
 
-    <!-- 搜索和工具栏 -->
-    <div class="toolbar">
-      <div class="search-section">
+      <div class="hero-aside">
+        <div class="mini-card">
+          <span>负责场地</span>
+          <strong>{{ stats.total }}</strong>
+        </div>
+        <div class="mini-card">
+          <span>当前可用</span>
+          <strong>{{ stats.available }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="summary-label">总场地数</span>
+        <strong>{{ stats.total }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">可用中</span>
+        <strong>{{ stats.available }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">维护中</span>
+        <strong>{{ stats.maintenance }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">损坏待处理</span>
+        <strong>{{ stats.damaged }}</strong>
+      </article>
+    </section>
+
+    <section class="control-card">
+      <div class="control-copy">
+        <h2>场地列表</h2>
+        <p>同类管理页统一采用概览卡片 + 操作区 + 数据表格的布局。</p>
+      </div>
+
+      <div class="control-actions">
         <el-input
-            v-model="searchKeyword"
-            placeholder="搜索设施名称、型号或类别..."
-            size="large"
-            class="search-input"
-            clearable
-            @keyup.enter="handleSearch"
-            @clear="handleClearSearch"
+          v-model="searchKeyword"
+          placeholder="搜索场地名称、型号或分类"
+          clearable
+          class="search-input"
+          @keyup.enter="handleSearch"
+          @clear="handleClearSearch"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
-          <template #append>
-            <el-button @click="handleSearch" type="primary" size="large">
-              搜索
-            </el-button>
-          </template>
         </el-input>
+        <el-button type="primary" @click="handleSearch">搜索</el-button>
       </div>
-    </div>
+    </section>
 
-    <!-- 设施表格 -->
-    <div class="table-container">
-      <el-table
-          :data="facilityList"
-          class="facility-table"
-          :header-cell-style="headerCellStyle"
-          :cell-style="cellStyle"
-          @row-click="handleRowClick"
-          v-loading="loading"
-          stripe
-      >
-        <el-table-column prop="name" label="设施名称" min-width="180">
+    <section class="panel-card">
+      <el-table :data="facilityList" v-loading="loading" stripe>
+        <el-table-column label="场地信息" min-width="260">
           <template #default="{ row }">
-            <div class="facility-name">
-              <div class="name">{{ row.name }}</div>
-              <div class="model" v-if="row.model">型号: {{ row.model }}</div>
+            <div class="facility-cell">
+              <div class="facility-thumb">
+                <img :src="row.imageUrl || fallbackImage" :alt="row.name">
+              </div>
+              <div>
+                <div class="facility-name">{{ row.name }}</div>
+                <div class="facility-meta">{{ row.model || '未填写型号' }}</div>
+              </div>
             </div>
           </template>
         </el-table-column>
-
-        <el-table-column prop="category" label="类别" width="180"align="center">
+        <el-table-column prop="category" label="分类" min-width="130" />
+        <el-table-column prop="location" label="位置" min-width="170" />
+        <el-table-column label="状态" width="120" align="center">
           <template #default="{ row }">
-            <el-tag class="category-tag" effect="light">
-              {{ row.category || '-' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="location" label="位置" width="180" align="center">
-          <template #default="{ row }">
-            <span class="location">{{ row.location || '-' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="status" label="状态" width="110" align="center">
-          <template #default="{ row }">
-            <el-tag
-                :type="getStatusType(row.status)"
-                class="status-tag"
-                effect="light"
-            >
-              <el-icon><CircleCheck v-if="row.status === 'AVAILABLE'" /><CircleClose v-else-if="row.status === 'DAMAGED'" /><Tools v-else-if="row.status === 'MAINTENANCE'" /><Timer v-else /></el-icon>
+            <el-tag :type="getStatusType(row.status)" effect="light">
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-
-        <el-table-column prop="price" label="价格" width="130" align="center">
+        <el-table-column label="价格" width="120" align="center">
           <template #default="{ row }">
-            <span class="price">¥{{ row.price ? row.price.toLocaleString() : '-' }}</span>
+            {{ formatCurrency(row.price) }}
           </template>
         </el-table-column>
-
-        <el-table-column label="操作" width="330" align="center" fixed="right">
+        <el-table-column label="操作" width="240" fixed="right" align="center">
           <template #default="{ row }">
-            <div class="action-buttons">
+            <div class="row-actions">
+              <el-button link type="primary" @click.stop="openDetail(row)">查看详情</el-button>
               <el-button
-                  size="small"
-                  type="primary"
-                  :plain="true"
-                  class="action-btn edit-btn"
-                  @click.stop="handleView(row)"
+                link
+                type="success"
+                :disabled="row.status === 'MAINTENANCE'"
+                @click.stop="openMaintenanceDialog(row)"
               >
-                <el-icon><View /></el-icon>
-                查看详情
-              </el-button>
-              <el-button
-                  size="small"
-                  type="success"
-                  :plain="true"
-                  class="action-btn edit-btn"
-                  @click.stop="handleStartMaintenance(row)"
-                  v-if="row.status !== 'MAINTENANCE'"
-              >
-                <el-icon><Tools /></el-icon>
-                开始维护
+                发起维护
               </el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
-      <div class="pagination-container" v-if="total > 0">
+      <div class="pagination-wrap" v-if="total > 0">
         <el-pagination
-            v-model:current-page="pagination.page"
-            v-model:page-size="pagination.size"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-            class="custom-pagination"
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
         />
       </div>
-    </div>
+    </section>
 
-    <!-- 查看设施详情对话框 -->
-    <el-dialog
-        title="设施详情"
-        v-model="detailDialogVisible"
-        width="600px"
-        class="facility-detail-dialog"
-        :close-on-click-modal="false"
+    <el-drawer
+      v-model="detailDrawerVisible"
+      title="场地详情"
+      size="760px"
+      class="detail-drawer"
     >
-      <div class="facility-detail-content">
-        <div class="detail-item">
-          <span class="detail-label">设施名称:</span>
-          <span class="detail-value">{{ currentFacility.name }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">设施型号:</span>
-          <span class="detail-value">{{ currentFacility.model || '-' }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">设施类别:</span>
-          <span class="detail-value">{{ currentFacility.category || '-' }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">存放位置:</span>
-          <span class="detail-value">{{ currentFacility.location || '-' }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">状态:</span>
-          <span class="detail-value">
-            <el-tag :type="getStatusType(currentFacility.status)" size="small">
-              {{ getStatusText(currentFacility.status) }}
-            </el-tag>
-          </span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">购买日期:</span>
-          <span class="detail-value">{{ currentFacility.purchaseDate || '-' }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">价格:</span>
-          <span class="detail-value">¥{{ currentFacility.price ? currentFacility.price.toLocaleString() : '-' }}</span>
-        </div>
-        <div class="detail-item full-width">
-          <span class="detail-label">设施描述:</span>
-          <span class="detail-value">{{ currentFacility.description || '-' }}</span>
-        </div>
+      <div v-loading="detailLoading" class="detail-layout">
+        <template v-if="detailFacility">
+          <section class="detail-hero">
+            <img :src="detailFacility.imageUrl || fallbackImage" :alt="detailFacility.name">
+            <div class="detail-hero-copy">
+              <span class="eyebrow">Facility Detail</span>
+              <h2>{{ detailFacility.name }}</h2>
+              <p>{{ detailFacility.description || '暂无场地介绍。' }}</p>
+              <div class="detail-tags">
+                <el-tag :type="getStatusType(detailFacility.status)" effect="light">
+                  {{ getStatusText(detailFacility.status) }}
+                </el-tag>
+                <el-tag effect="light">{{ detailFacility.category || '未分类' }}</el-tag>
+                <el-tag effect="light">{{ detailFacility.location || '位置未填写' }}</el-tag>
+              </div>
+            </div>
+          </section>
+
+          <section class="detail-grid">
+            <article class="detail-info-card">
+              <span class="detail-label">型号</span>
+              <strong>{{ detailFacility.model || '-' }}</strong>
+            </article>
+            <article class="detail-info-card">
+              <span class="detail-label">购买日期</span>
+              <strong>{{ detailFacility.purchaseDate || '-' }}</strong>
+            </article>
+            <article class="detail-info-card">
+              <span class="detail-label">价格</span>
+              <strong>{{ formatCurrency(detailFacility.price) }}</strong>
+            </article>
+            <article class="detail-info-card">
+              <span class="detail-label">未来 {{ detailQueryDays }} 天预约</span>
+              <strong>{{ upcomingReservations.length }}</strong>
+            </article>
+          </section>
+
+          <section class="timeline-panel">
+            <div class="section-title">
+              <h3>近期预约时间线</h3>
+              <span>按开始时间排序</span>
+            </div>
+
+            <div v-if="upcomingReservations.length" class="timeline-list">
+              <article v-for="item in upcomingReservations" :key="item.id" class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                  <div class="timeline-top">
+                    <strong>{{ formatDateTime(item.startTime) }}</strong>
+                    <el-tag size="small" :type="getReservationStatusType(item.status)" effect="light">
+                      {{ getReservationStatusText(item.status) }}
+                    </el-tag>
+                  </div>
+                  <p>{{ item.userName || '未知用户' }} · {{ item.purpose || '未填写用途' }}</p>
+                  <span>{{ formatDateTime(item.endTime) }} 结束</span>
+                </div>
+              </article>
+            </div>
+            <el-empty v-else description="未来几天暂无预约安排" />
+          </section>
+        </template>
       </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="detailDialogVisible = false">关闭</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    </el-drawer>
 
-    <!-- 维护任务创建对话框 -->
     <el-dialog
-        title="开始维护"
-        v-model="maintenanceDialogVisible"
-        width="600px"
-        class="maintenance-dialog"
-        :close-on-click-modal="false"
+      v-model="maintenanceDialogVisible"
+      title="发起维护登记"
+      width="580px"
+      destroy-on-close
     >
-      <el-form :model="maintenanceForm" :rules="maintenanceRules" ref="maintenanceFormRef" class="maintenance-form" label-width="100px">
-        <el-form-item label="设施名称">
-          <el-input v-model="currentFacility.name" disabled />
+      <el-form ref="maintenanceFormRef" :model="maintenanceForm" :rules="maintenanceRules" label-position="top">
+        <el-form-item label="场地名称">
+          <el-input :model-value="currentFacility.name" disabled />
         </el-form-item>
         <el-form-item label="维护类型" prop="maintenanceType">
-          <el-select v-model="maintenanceForm.maintenanceType" style="width: 100%;" placeholder="请选择维护类型">
-            <el-option label="日常保养" value="日常保养" />
-            <el-option label="故障维修" value="故障维修" />
-            <el-option label="设备升级" value="设备升级" />
-            <el-option label="其他" value="其他" />
+          <el-select v-model="maintenanceForm.maintenanceType" style="width: 100%">
+            <el-option label="常规维护" value="ROUTINE" />
+            <el-option label="故障维修" value="REPAIR" />
+            <el-option label="设备升级" value="UPGRADE" />
+            <el-option label="其他" value="OTHER" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="维护描述" prop="description">
-          <el-input type="textarea" v-model="maintenanceForm.description" :rows="3" placeholder="请输入维护描述信息" maxlength="200" show-word-limit />
         </el-form-item>
         <el-form-item label="计划开始时间" prop="startTime">
           <el-date-picker
-              v-model="maintenanceForm.startTime"
-              type="datetime"
-              placeholder="选择计划开始时间"
-              style="width: 100%;"
-              value-format="YYYY-MM-DD HH:mm:ss"
+            v-model="maintenanceForm.startTime"
+            type="datetime"
+            style="width: 100%"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            placeholder="选择计划开始时间"
+          />
+        </el-form-item>
+        <el-form-item label="维护描述" prop="description">
+          <el-input
+            v-model="maintenanceForm.description"
+            type="textarea"
+            :rows="4"
+            maxlength="300"
+            show-word-limit
+            placeholder="填写维护原因、现场情况与计划安排"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="maintenanceDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitMaintenance">提交</el-button>
-        </div>
+        <el-button @click="maintenanceDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitMaintenance">提交</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { facilityAPI, maintenanceAPI } from '../../api';
-import { View, CircleCheck, CircleClose, Tools, Timer, Search, Plus, Edit, Delete, Upload } from '@element-plus/icons-vue';
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
+import { facilityAPI, maintenanceAPI } from '../../api'
 
-const loading = ref(false);
-const facilityList = ref([]);
-const searchKeyword = ref('');
-const isSearchMode = ref(false);
-const detailDialogVisible = ref(false);
-const maintenanceDialogVisible = ref(false);
-const currentFacility = ref({});
-const maintenanceFormRef = ref(null);
-const currentUser = ref({});
+const fallbackImage = '/files/facility/default-facility.svg'
 
-// 搜索和分页
-const total = ref(0);
+const loading = ref(false)
+const detailLoading = ref(false)
+const allFacilities = ref([])
+const facilityList = ref([])
+const total = ref(0)
+const searchKeyword = ref('')
+const isSearchMode = ref(false)
+const detailDrawerVisible = ref(false)
+const maintenanceDialogVisible = ref(false)
+const detailFacility = ref(null)
+const detailQueryDays = ref(7)
+const upcomingReservations = ref([])
+const currentFacility = ref({})
+const maintenanceFormRef = ref(null)
+const currentUser = ref({})
+
 const pagination = reactive({
   page: 1,
   size: 10,
   sortBy: 'id',
   sortDir: 'desc'
-});
+})
 
-const maintenanceForm = ref({
+const maintenanceForm = reactive({
   facilityId: null,
   maintainerId: null,
-  maintenanceType: '',
+  maintenanceType: 'ROUTINE',
   description: '',
   startTime: ''
-});
+})
 
 const maintenanceRules = {
   maintenanceType: [{ required: true, message: '请选择维护类型', trigger: 'change' }],
-  description: [{ required: true, message: '请输入维护描述', trigger: 'blur' }],
+  description: [{ required: true, message: '请填写维护描述', trigger: 'blur' }],
   startTime: [{ required: true, message: '请选择计划开始时间', trigger: 'change' }]
-};
+}
 
-// 表格样式
-const headerCellStyle = {
-  backgroundColor: '#f8fafc',
-  color: '#4a5568',
-  fontWeight: '600',
-  borderBottom: '1px solid #e2e8f0'
-};
-
-const cellStyle = {
-  borderBottom: '1px solid #e2e8f0',
-  padding: '16px 12px'
-};
+const stats = computed(() => ({
+  total: allFacilities.value.length || 0,
+  available: allFacilities.value.filter((item) => item.status === 'AVAILABLE').length,
+  maintenance: allFacilities.value.filter((item) => item.status === 'MAINTENANCE').length,
+  damaged: allFacilities.value.filter((item) => item.status === 'DAMAGED').length
+}))
 
 onMounted(() => {
-  const userInfo = localStorage.getItem('userInfo');
+  const userInfo = localStorage.getItem('userInfo')
   if (userInfo) {
-    currentUser.value = JSON.parse(userInfo);
+    currentUser.value = JSON.parse(userInfo)
   }
-  loadFacilityList();
-});
+  loadFacilityStats()
+  loadFacilityList()
+})
+
+const loadFacilityStats = async () => {
+  try {
+    const result = await facilityAPI.list()
+    allFacilities.value = result.data || []
+  } catch (error) {
+    console.error('加载场地统计失败:', error)
+    allFacilities.value = []
+  }
+}
 
 const loadFacilityList = async () => {
   try {
-    loading.value = true;
-
-    let result;
+    loading.value = true
     const params = {
       page: pagination.page - 1,
       size: pagination.size,
       sortBy: pagination.sortBy,
       sortDir: pagination.sortDir
-    };
-
-    if (isSearchMode.value && searchKeyword.value.trim()) {
-      result = await facilityAPI.searchPage(searchKeyword.value.trim(), params);
-    } else {
-      result = await facilityAPI.listPage(params);
     }
+
+    const result = isSearchMode.value && searchKeyword.value.trim()
+      ? await facilityAPI.searchPage(searchKeyword.value.trim(), params)
+      : await facilityAPI.listPage(params)
 
     if (result.code === 200) {
-      facilityList.value = result.data.content || [];
-      total.value = result.data.totalElements || 0;
-    } else {
-      ElMessage.error(result.message || '获取设施列表失败');
+      facilityList.value = result.data.content || []
+      total.value = result.data.totalElements || 0
+      return
     }
+
+    ElMessage.error(result.message || '获取场地列表失败')
   } catch (error) {
-    console.error('加载设施列表失败:', error);
-    ElMessage.error('网络错误，请重试');
+    console.error('加载场地列表失败:', error)
+    ElMessage.error('加载场地列表失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
-const handleSearch = async () => {
-  pagination.page = 1;
-  if (searchKeyword.value.trim()) {
-    isSearchMode.value = true;
-  } else {
-    isSearchMode.value = false;
-  }
-  loadFacilityList();
-};
+const handleSearch = () => {
+  pagination.page = 1
+  isSearchMode.value = Boolean(searchKeyword.value.trim())
+  loadFacilityList()
+}
 
-// 清除搜索
 const handleClearSearch = () => {
-  searchKeyword.value = '';
-  isSearchMode.value = false;
-  pagination.page = 1;
-  loadFacilityList();
-};
+  searchKeyword.value = ''
+  isSearchMode.value = false
+  pagination.page = 1
+  loadFacilityList()
+}
 
-// 分页处理
 const handleSizeChange = (size) => {
-  pagination.size = size;
-  pagination.page = 1;
-  loadFacilityList();
-};
+  pagination.size = size
+  pagination.page = 1
+  loadFacilityList()
+}
 
 const handleCurrentChange = (page) => {
-  pagination.page = page;
-  loadFacilityList();
-};
+  pagination.page = page
+  loadFacilityList()
+}
 
-// 处理行点击
-const handleRowClick = (row) => {
-  handleView(row);
-};
+const openDetail = async (row) => {
+  currentFacility.value = { ...row }
+  detailDrawerVisible.value = true
+  detailLoading.value = true
 
-const handleView = (row) => {
-  currentFacility.value = { ...row };
-  detailDialogVisible.value = true;
-};
+  try {
+    const result = await facilityAPI.getDetail(row.id, 7)
+    const payload = result.data || {}
+    detailFacility.value = payload.facility || row
+    upcomingReservations.value = payload.reservations || []
+    detailQueryDays.value = payload.queryDays || 7
+  } catch (error) {
+    console.error('加载场地详情失败:', error)
+    detailFacility.value = row
+    upcomingReservations.value = []
+    ElMessage.error('加载场地详情失败')
+  } finally {
+    detailLoading.value = false
+  }
+}
 
-const handleStartMaintenance = (row) => {
-  currentFacility.value = { ...row };
-  maintenanceForm.value = {
-    facilityId: row.id,
-    maintainerId: currentUser.value.id || null,
-    maintenanceType: '',
-    description: '',
-    startTime: ''
-  };
-  maintenanceDialogVisible.value = true;
-};
+const openMaintenanceDialog = (row) => {
+  currentFacility.value = { ...row }
+  maintenanceForm.facilityId = row.id
+  maintenanceForm.maintainerId = currentUser.value.id || null
+  maintenanceForm.maintenanceType = 'ROUTINE'
+  maintenanceForm.description = ''
+  maintenanceForm.startTime = ''
+  maintenanceDialogVisible.value = true
+}
 
 const submitMaintenance = async () => {
   try {
-    await maintenanceFormRef.value.validate();
-
-    const result = await maintenanceAPI.create(maintenanceForm.value);
+    await maintenanceFormRef.value.validate()
+    const result = await maintenanceAPI.create({ ...maintenanceForm })
     if (result.code === 200) {
-      ElMessage.success('维护任务创建成功');
-      maintenanceDialogVisible.value = false;
-      loadFacilityList();
-    } else {
-      ElMessage.error(result.message || '维护任务创建失败');
+      ElMessage.success('维护登记已创建')
+      maintenanceDialogVisible.value = false
+      loadFacilityStats()
+      loadFacilityList()
+      return
     }
+    ElMessage.error(result.message || '维护登记创建失败')
   } catch (error) {
-    console.error('提交失败:', error);
-    ElMessage.error('提交失败，请重试');
+    console.error('提交维护登记失败:', error)
+    ElMessage.error('提交维护登记失败')
   }
-};
+}
 
-const getStatusType = (status) => {
-  const map = {
-    'AVAILABLE': 'success',
-    'MAINTENANCE': 'info',
-    'DAMAGED': 'danger'
-  };
-  return map[status] || '';
-};
+const getStatusType = (status) => ({
+  AVAILABLE: 'success',
+  MAINTENANCE: 'warning',
+  DAMAGED: 'danger'
+}[status] || 'info')
 
-const getStatusText = (status) => {
-  const map = {
-    'AVAILABLE': '可用',
-    'MAINTENANCE': '维护中',
-    'DAMAGED': '损坏'
-  };
-  return map[status] || status;
-};
+const getStatusText = (status) => ({
+  AVAILABLE: '可用',
+  MAINTENANCE: '维护中',
+  DAMAGED: '损坏'
+}[status] || status || '-')
+
+const getReservationStatusType = (status) => ({
+  PENDING: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+  COMPLETED: 'info',
+  CANCELLED: 'info'
+}[status] || '')
+
+const getReservationStatusText = (status) => ({
+  PENDING: '待审核',
+  APPROVED: '已通过',
+  REJECTED: '已驳回',
+  COMPLETED: '已完成',
+  CANCELLED: '已取消'
+}[status] || status || '-')
+
+const formatCurrency = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+  const numberValue = Number(value)
+  if (Number.isNaN(numberValue)) {
+    return value
+  }
+  return `¥${numberValue.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
+const formatDateTime = (value) => {
+  if (!value) {
+    return '-'
+  }
+  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+}
 </script>
 
 <style scoped>
-.maintainer-facility {
-  padding: 0;
-  background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 25%, #e6f7ff 50%, #f8fafc 100%);
-  min-height: calc(100vh - 88px);
+.facility-theme {
+  --theme-main: #0f766e;
+  --theme-soft: rgba(15, 118, 110, 0.12);
+  --theme-border: rgba(15, 118, 110, 0.12);
+  --theme-shadow: rgba(15, 118, 110, 0.16);
+  padding: 24px;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(45, 212, 191, 0.18), transparent 26%),
+    linear-gradient(180deg, #effcf9 0%, #f7fdfc 46%, #eefbf7 100%);
 }
 
-/* 页面标题区域 */
-.page-header {
-  position: relative;
-  background: #ffffff;
-  margin: 0 0 24px 0;
-  border-radius: 0;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+.page-hero,
+.control-card,
+.panel-card {
+  animation: rise-in 0.55s ease both;
 }
 
-.header-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #409eff 0%, #66b1ff 50%, #409eff 100%);
-  background-size: 200% 100%;
-  animation: gradient-shimmer 3s ease-in-out infinite;
+.page-hero {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--theme-border);
+  box-shadow: 0 24px 60px var(--theme-shadow);
 }
 
-.header-content {
-  padding: 32px 40px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0;
-}
-
-.title-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
-}
-
-.title-icon svg {
-  width: 24px;
-  height: 24px;
-  color: #409eff;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: #718096;
-  margin: 0 0 0 64px;
-  font-weight: 400;
-}
-
-/* 工具栏 */
-.toolbar {
-  margin-bottom: 24px;
-  padding: 0;
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.search-section {
-  flex: 1;
-  min-width: 300px;
-}
-
-.search-input {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.search-input :deep(.el-input__wrapper) {
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  height: 48px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.search-input :deep(.el-input__wrapper:hover) {
-  border-color: #cbd5e0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.search-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #409eff;
-  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1), 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.search-input :deep(.el-input__inner) {
-  font-size: 15px;
-  height: 46px;
-  font-weight: 500;
-}
-
-/* 表格容器 */
-.table-container {
-  background: #ffffff;
-  border-radius: 0;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  width: 100%;
-}
-
-.facility-table {
-  width: 100%;
-}
-
-.facility-table :deep(.el-table) {
-  width: 100% !important;
-}
-
-.facility-table :deep(.el-table__header-wrapper) {
-  width: 100% !important;
-}
-
-.facility-table :deep(.el-table__body-wrapper) {
-  width: 100% !important;
-}
-
-.facility-table :deep(.el-table__header) {
-  width: 100% !important;
-}
-
-.facility-table :deep(.el-table__body) {
-  width: 100% !important;
-}
-
-.facility-name .name {
-  font-weight: 600;
-  color: #2d3748;
-  font-size: 14px;
-}
-
-.facility-name .model {
-  font-size: 12px;
-  color: #718096;
-  margin-top: 2px;
-}
-
-.category-tag {
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 12px;
-  padding: 4px 8px;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
-  color: #0369a1;
-}
-
-.location {
-  color: #4a5568;
-  font-size: 14px;
-}
-
-.price {
-  color: #059669;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-/* 状态标签 */
-.status-tag {
-  border-radius: 6px;
-  font-weight: 500;
-  padding: 4px 8px;
+.eyebrow {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* 操作按钮 */
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.action-btn {
-  border-radius: 8px;
-  font-weight: 500;
   padding: 6px 12px;
-  transition: all 0.3s ease;
+  border-radius: 999px;
+  background: var(--theme-soft);
+  color: var(--theme-main);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.edit-btn {
-  border-color: #409eff;
-  color: #409eff;
+.hero-copy h1 {
+  margin: 14px 0 10px;
+  font-size: 32px;
+  color: #0f172a;
 }
 
-.edit-btn:hover {
-  background: linear-gradient(135deg, #409eff 0%, #1976d2 100%);
-  border-color: transparent;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+.hero-copy p {
+  margin: 0;
+  color: #52606d;
+  line-height: 1.7;
 }
 
-.delete-btn {
-  border-color: #f56565;
-  color: #f56565;
+.hero-aside {
+  display: grid;
+  gap: 14px;
 }
 
-.delete-btn:hover {
-  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-  border-color: transparent;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
-}
-
-/* 分页容器 */
-.pagination-container {
-  padding: 20px 0;
+.mini-card {
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  min-height: 110px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #ebfffa 0%, #ffffff 100%);
+  border: 1px solid var(--theme-border);
 }
 
-.custom-pagination :deep(.el-pagination) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.custom-pagination :deep(.el-pagination__total) {
-  color: #4a5568;
-  font-weight: 500;
-  margin-right: 16px;
-}
-
-.custom-pagination :deep(.el-pager) {
-  display: flex;
-  gap: 4px;
-}
-
-.custom-pagination :deep(.el-pager li) {
-  border-radius: 6px;
-  transition: all 0.3s ease;
-}
-
-.custom-pagination :deep(.el-pager li.is-active) {
-  background: linear-gradient(135deg, #409eff 0%, #1976d2 100%);
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.custom-pagination :deep(.el-select) {
-  margin: 0 8px;
-}
-
-.custom-pagination :deep(.el-input__wrapper) {
-  border-radius: 6px;
-  border-color: #e2e8f0;
-}
-
-.custom-pagination :deep(.el-input__inner) {
+.mini-card span {
+  color: #5f6b75;
   font-size: 13px;
 }
 
-/* 对话框样式 */
-.facility-detail-dialog :deep(.el-dialog),
-.maintenance-dialog :deep(.el-dialog) {
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+.mini-card strong {
+  margin-top: 10px;
+  color: #102a27;
+  font-size: 24px;
 }
 
-.facility-detail-dialog :deep(.el-dialog__header),
-.maintenance-dialog :deep(.el-dialog__header) {
-  background: linear-gradient(135deg, #f8fafc 0%, #e6f7ff 100%);
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid #e2e8f0;
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
 }
 
-.facility-detail-dialog :deep(.el-dialog__title),
-.maintenance-dialog :deep(.el-dialog__title) {
-  color: #1a202c;
-  font-weight: 600;
-  font-size: 18px;
+.summary-card {
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px rgba(17, 24, 39, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.facility-detail-dialog :deep(.el-dialog__body),
-.maintenance-dialog :deep(.el-dialog__body) {
-  padding: 24px;
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 46px rgba(17, 24, 39, 0.1);
 }
 
-.facility-detail-content .detail-item {
+.summary-label {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.summary-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.control-card,
+.panel-card {
+  margin-top: 20px;
+  padding: 22px 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 42px rgba(17, 24, 39, 0.08);
+}
+
+.control-card {
   display: flex;
-  margin-bottom: 16px;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
 }
 
-.detail-item.full-width {
-  flex-direction: column;
+.control-copy h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #102a27;
 }
 
-.detail-item.full-width .detail-value {
-  margin-top: 8px;
+.control-copy p {
+  margin: 8px 0 0;
+  color: #667085;
+  font-size: 13px;
 }
 
-.detail-label {
-  font-weight: 600;
-  color: #4a5568;
-  min-width: 100px;
-  margin-right: 16px;
+.control-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input {
+  width: 280px;
+}
+
+.facility-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.facility-thumb {
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #effff8;
   flex-shrink: 0;
 }
 
-.detail-value {
-  color: #2d3748;
-  flex: 1;
-  word-break: break-word;
+.facility-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.maintenance-form :deep(.el-form-item__label) {
-  color: #4a5568;
-  font-weight: 600;
+.facility-name {
+  font-weight: 700;
+  color: #0f172a;
 }
 
-.maintenance-form :deep(.el-input__wrapper) {
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.maintenance-form :deep(.el-input__wrapper:hover) {
-  border-color: #cbd5e0;
-}
-
-.maintenance-form :deep(.el-input__wrapper.is-focus) {
-  border-color: #409eff;
-  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
-}
-
-.maintenance-form :deep(.el-textarea__inner) {
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.maintenance-form :deep(.el-textarea__inner:hover) {
-  border-color: #cbd5e0;
-}
-
-.maintenance-form :deep(.el-textarea__inner:focus) {
-  border-color: #409eff;
-  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
-}
-
-.maintenance-form :deep(.el-select .el-input__wrapper) {
-  cursor: pointer;
-}
-
-.dialog-footer {
-  padding: 16px 24px 24px;
-  text-align: right;
-}
-
-.dialog-footer .el-button {
-  border-radius: 8px;
-}
-
-.damage-image-upload .image-preview {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.damage-image-upload .preview-img {
-  max-width: 100%;
-  max-height: 200px;
-  border-radius: 8px;
-  object-fit: contain;
-}
-
-.damage-image-upload .image-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.damage-image-upload .image-upload-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-  border: 2px dashed #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.damage-image-upload .image-upload-area:hover {
-  border-color: #409eff;
-  background: #f0f9ff;
-}
-
-.damage-image-upload .upload-icon {
-  font-size: 48px;
-  color: #a0aec0;
-  margin-bottom: 12px;
-}
-
-.damage-image-upload .upload-text {
-  text-align: center;
-}
-
-.damage-image-upload .upload-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #4a5568;
-  margin-bottom: 4px;
-}
-
-.damage-image-upload .upload-hint {
+.facility-meta {
+  margin-top: 4px;
   font-size: 12px;
-  color: #a0aec0;
+  color: #667085;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.detail-layout {
+  display: grid;
+  gap: 22px;
+}
+
+.detail-hero {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #effff8 0%, #ffffff 100%);
+}
+
+.detail-hero img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+.detail-hero-copy h2 {
+  margin: 12px 0 10px;
+  color: #102a27;
+}
+
+.detail-hero-copy p {
+  margin: 0;
+  color: #56616b;
+  line-height: 1.7;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.detail-info-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f8fffd;
+  border: 1px solid rgba(15, 118, 110, 0.08);
+}
+
+.detail-label {
+  display: block;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.detail-info-card strong {
+  display: block;
+  margin-top: 10px;
+  color: #102a27;
+  line-height: 1.5;
+}
+
+.timeline-panel {
+  padding: 18px;
+  border-radius: 24px;
+  background: #fbfffe;
+  border: 1px solid rgba(15, 118, 110, 0.08);
+}
+
+.section-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.section-title h3 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.section-title span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 14px;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
+  box-shadow: 0 0 0 6px rgba(20, 184, 166, 0.12);
+}
+
+.timeline-content {
+  padding: 16px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 118, 110, 0.08);
+}
+
+.timeline-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.timeline-content p {
+  margin: 10px 0 6px;
+  color: #1f2937;
+}
+
+.timeline-content span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1200px) {
+  .summary-grid,
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .page-hero,
+  .detail-hero,
+  .control-card {
+    grid-template-columns: 1fr;
+  }
+
+  .control-card {
+    align-items: stretch;
+  }
+
+  .control-actions,
+  .search-input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .facility-theme {
+    padding: 16px;
+  }
+
+  .summary-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

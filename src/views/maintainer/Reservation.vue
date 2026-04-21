@@ -1,229 +1,257 @@
 <template>
-  <div class="maintainer-reservation-page">
-    <div class="page-header">
-      <div class="header-decoration"></div>
-      <div class="header-content">
-        <div>
-          <h1 class="page-title">
-            <span class="title-icon">
-              <el-icon><Calendar /></el-icon>
-            </span>
-            预约处理
-          </h1>
-          <p class="page-subtitle">设施管理员负责已绑定设施的预约审核、现场核销与状态跟踪。</p>
+  <div class="page-shell reservation-theme">
+    <section class="page-hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Reservation Review</span>
+        <h1>预约处理</h1>
+        <p>统一处理本人负责场地的预约审核、签到核销与状态跟踪，同类页面采用一致布局和操作节奏。</p>
+      </div>
+
+      <div class="hero-aside">
+        <div class="mini-card">
+          <span>待审核</span>
+          <strong>{{ stats.pending }}</strong>
+        </div>
+        <div class="mini-card">
+          <span>已通过</span>
+          <strong>{{ stats.approved }}</strong>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">预约总数</div>
-        <div class="stat-value">{{ stats.total }}</div>
-      </div>
-      <div class="stat-card warning">
-        <div class="stat-label">待审核</div>
-        <div class="stat-value">{{ stats.pending }}</div>
-      </div>
-      <div class="stat-card success">
-        <div class="stat-label">已通过</div>
-        <div class="stat-value">{{ stats.approved }}</div>
-      </div>
-      <div class="stat-card info">
-        <div class="stat-label">已完成</div>
-        <div class="stat-value">{{ stats.completed }}</div>
-      </div>
-    </div>
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="summary-label">预约总数</span>
+        <strong>{{ stats.total }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">待审核</span>
+        <strong>{{ stats.pending }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">已通过</span>
+        <strong>{{ stats.approved }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">已完成</span>
+        <strong>{{ stats.completed }}</strong>
+      </article>
+    </section>
 
-    <div class="toolbar-card">
-      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-        <el-tab-pane label="待审核" name="PENDING" />
-        <el-tab-pane label="已通过" name="APPROVED" />
-        <el-tab-pane label="已完成" name="COMPLETED" />
-        <el-tab-pane label="已拒绝" name="REJECTED" />
-        <el-tab-pane label="全部" name="ALL" />
-      </el-tabs>
+    <section class="control-card">
+      <div class="control-copy">
+        <h2>预约筛选</h2>
+        <p>状态切换、关键词搜索和现场核销都集中在这一层，减少来回跳转。</p>
+      </div>
 
-      <div class="toolbar">
+      <div class="control-actions">
+        <div class="filter-tabs">
+          <button
+            v-for="tab in tabs"
+            :key="tab.value"
+            :class="['filter-chip', { active: activeTab === tab.value }]"
+            type="button"
+            @click="changeTab(tab.value)"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索设施名称或申请人"
-          class="search-input"
+          placeholder="搜索场地名称或申请人"
           clearable
+          class="search-input"
           @keyup.enter="handleSearch"
           @clear="handleClearSearch"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
-          <template #append>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-          </template>
         </el-input>
+        <el-button type="primary" @click="handleSearch">搜索</el-button>
       </div>
-    </div>
+    </section>
 
-    <div class="table-card">
-      <el-table :data="reservationList" v-loading="loading" stripe @row-click="handleRowClick">
-        <el-table-column prop="facilityName" label="设施名称" min-width="150" />
+    <section class="panel-card">
+      <el-table :data="pagedList" v-loading="loading" stripe>
+        <el-table-column prop="facilityName" label="场地" min-width="150" />
         <el-table-column prop="userName" label="申请人" min-width="120" />
-        <el-table-column prop="startTime" label="开始时间" min-width="170" />
-        <el-table-column prop="endTime" label="结束时间" min-width="170" />
-        <el-table-column prop="purpose" label="用途" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="verificationCode" label="核销码" width="120" align="center">
+        <el-table-column label="预约时间" min-width="220">
           <template #default="{ row }">
-            <el-tag v-if="row.verificationCode" type="info" effect="plain">{{ row.verificationCode }}</el-tag>
+            <div class="time-stack">
+              <span>{{ formatDateTime(row.startTime) }}</span>
+              <small>{{ formatDateTime(row.endTime) }} 结束</small>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="purpose" label="用途" min-width="180" show-overflow-tooltip />
+        <el-table-column label="签到状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getCheckinStatusType(row.checkinStatus)" effect="light">
+              {{ getCheckinStatusText(row.checkinStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="预约状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)" effect="light">
+              {{ getStatusText(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="核销码" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.verificationCode" effect="plain">{{ row.verificationCode }}</el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="checkinStatus" label="签到状态" width="120" align="center">
+        <el-table-column label="操作" width="260" fixed="right" align="center">
           <template #default="{ row }">
-            <el-tag :type="getCheckinStatusType(row.checkinStatus)">{{ getCheckinStatusText(row.checkinStatus) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="预约状态" width="120" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="260" align="center" fixed="right">
-          <template #default="{ row }">
-            <div class="action-buttons">
+            <div class="row-actions">
               <el-button
                 v-if="row.status === 'PENDING'"
-                size="small"
+                link
                 type="success"
-                plain
-                @click.stop="handleApprove(row)"
+                @click.stop="openAuditDialog(row, 'approve')"
               >
                 通过
               </el-button>
               <el-button
                 v-if="row.status === 'PENDING'"
-                size="small"
+                link
                 type="danger"
-                plain
-                @click.stop="handleReject(row)"
+                @click.stop="openAuditDialog(row, 'reject')"
               >
-                拒绝
+                驳回
               </el-button>
-              <el-button
-                v-if="canVerify(row)"
-                size="small"
-                type="warning"
-                plain
-                @click.stop="handleVerify(row)"
-              >
+              <el-button v-if="canVerify(row)" link type="warning" @click.stop="openVerifyDialog(row)">
                 {{ getVerifyActionText(row) }}
               </el-button>
-              <el-button size="small" type="primary" plain @click.stop="handleRowClick(row)">
-                查看
-              </el-button>
+              <el-button link type="primary" @click.stop="openDetail(row)">查看</el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination-wrap" v-if="total > 0">
+      <div class="pagination-wrap" v-if="filteredList.length">
         <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.size"
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          :total="total"
+          :total="filteredList.length"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
         />
       </div>
-    </div>
+    </section>
 
     <el-dialog v-model="detailDialogVisible" title="预约详情" width="760px">
-      <el-descriptions v-if="currentRow" :column="2" border>
-        <el-descriptions-item label="设施名称">{{ currentRow.facilityName }}</el-descriptions-item>
-        <el-descriptions-item label="申请人">{{ currentRow.userName }}</el-descriptions-item>
-        <el-descriptions-item label="开始时间">{{ currentRow.startTime }}</el-descriptions-item>
-        <el-descriptions-item label="结束时间">{{ currentRow.endTime }}</el-descriptions-item>
-        <el-descriptions-item label="预约状态">
-          <el-tag :type="getStatusType(currentRow.status)">{{ getStatusText(currentRow.status) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="签到状态">
-          <el-tag :type="getCheckinStatusType(currentRow.checkinStatus)">{{ getCheckinStatusText(currentRow.checkinStatus) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item v-if="currentRow.verificationCode" label="核销码">
-          <el-tag type="info" effect="plain">{{ currentRow.verificationCode }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item v-if="currentRow.verifiedByName" label="核销人">
-          {{ currentRow.verifiedByName }}
-        </el-descriptions-item>
-        <el-descriptions-item v-if="currentRow.checkinTime" label="签到时间">
-          {{ currentRow.checkinTime }}
-        </el-descriptions-item>
-        <el-descriptions-item v-if="currentRow.checkoutTime" label="签退时间">
-          {{ currentRow.checkoutTime }}
-        </el-descriptions-item>
-        <el-descriptions-item label="用途" :span="2">
-          {{ currentRow.purpose || '无' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="审核备注" :span="2">
-          {{ currentRow.adminRemark || '无' }}
-        </el-descriptions-item>
-      </el-descriptions>
+      <div v-if="currentRow" class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">场地名称</span>
+          <strong>{{ currentRow.facilityName || '-' }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">申请人</span>
+          <strong>{{ currentRow.userName || '-' }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">开始时间</span>
+          <strong>{{ formatDateTime(currentRow.startTime) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">结束时间</span>
+          <strong>{{ formatDateTime(currentRow.endTime) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">预约状态</span>
+          <strong>{{ getStatusText(currentRow.status) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">签到状态</span>
+          <strong>{{ getCheckinStatusText(currentRow.checkinStatus) }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">核销码</span>
+          <strong>{{ currentRow.verificationCode || '-' }}</strong>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">核销人</span>
+          <strong>{{ currentRow.verifiedByName || '-' }}</strong>
+        </div>
+        <div class="detail-item full">
+          <span class="detail-label">预约用途</span>
+          <p>{{ currentRow.purpose || '未填写' }}</p>
+        </div>
+        <div class="detail-item full">
+          <span class="detail-label">审核备注</span>
+          <p>{{ currentRow.adminRemark || '暂无备注' }}</p>
+        </div>
+      </div>
     </el-dialog>
 
-    <el-dialog v-model="auditDialogVisible" :title="auditDialogTitle" width="560px">
-      <el-form ref="formRef" :model="auditForm" :rules="rules" label-width="90px">
-        <el-form-item label="设施名称">
+    <el-dialog v-model="auditDialogVisible" :title="auditAction === 'approve' ? '审核通过预约' : '驳回预约'" width="560px">
+      <el-form ref="formRef" :model="auditForm" :rules="rules" label-position="top">
+        <el-form-item label="场地">
           <el-input :model-value="currentRow?.facilityName" disabled />
         </el-form-item>
         <el-form-item label="申请人">
           <el-input :model-value="currentRow?.userName" disabled />
         </el-form-item>
-        <el-form-item label="备注" prop="adminRemark">
+        <el-form-item label="审核备注" prop="adminRemark">
           <el-input
             v-model="auditForm.adminRemark"
             type="textarea"
             :rows="4"
             maxlength="200"
             show-word-limit
-            placeholder="请输入审核意见或补充说明"
+            placeholder="填写审核意见或补充说明"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="auditDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确认</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitAudit">确认</el-button>
       </template>
     </el-dialog>
 
     <el-dialog v-model="verifyDialogVisible" :title="verifyDialogTitle" width="420px">
-      <div class="verify-info" v-if="currentRow">
-        <p>设施：{{ currentRow.facilityName }}</p>
-        <p>申请人：{{ currentRow.userName }}</p>
-        <p>状态：{{ getCheckinStatusText(currentRow.checkinStatus) }}</p>
+      <div class="verify-panel" v-if="currentRow">
+        <p>{{ currentRow.facilityName }}</p>
+        <span>{{ currentRow.userName }} · {{ getCheckinStatusText(currentRow.checkinStatus) }}</span>
       </div>
-      <el-form>
-        <el-form-item label="核销码" label-width="80px">
+      <el-form label-position="top">
+        <el-form-item label="核销码">
           <el-input
             v-model="verifyForm.verificationCode"
             maxlength="8"
             show-word-limit
-            placeholder="请输入用户提供的核销码"
+            placeholder="输入用户提供的核销码"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="verifyDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="verifyLoading" @click="handleVerifySubmit">确认核销</el-button>
+        <el-button type="primary" :loading="verifyLoading" @click="submitVerify">确认核销</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Calendar, Search } from '@element-plus/icons-vue'
+import { Search } from '@element-plus/icons-vue'
 import { reservationAPI } from '../../api'
-import { formatActionMessage } from '../../utils/messageText'
+
+const tabs = [
+  { label: '待审核', value: 'PENDING' },
+  { label: '已通过', value: 'APPROVED' },
+  { label: '已完成', value: 'COMPLETED' },
+  { label: '已驳回', value: 'REJECTED' },
+  { label: '全部', value: 'ALL' }
+]
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -232,39 +260,58 @@ const activeTab = ref('PENDING')
 const searchKeyword = ref('')
 const isSearchMode = ref(false)
 const reservationList = ref([])
-const allReservations = ref([])
-const total = ref(0)
+const currentRow = ref(null)
 const detailDialogVisible = ref(false)
 const auditDialogVisible = ref(false)
 const verifyDialogVisible = ref(false)
-const auditDialogTitle = ref('审核预约')
 const verifyDialogTitle = ref('现场核销')
-const currentRow = ref(null)
-const actionType = ref('approve')
+const auditAction = ref('approve')
+const currentPage = ref(1)
+const pageSize = ref(10)
 const formRef = ref(null)
-const pagination = ref({
-  page: 1,
-  size: 10
-})
-const auditForm = ref({
+
+const auditForm = reactive({
   adminRemark: ''
 })
-const verifyForm = ref({
+
+const verifyForm = reactive({
   verificationCode: ''
 })
 
 const rules = {
-  adminRemark: [
-    { max: 200, message: '备注不能超过 200 个字符', trigger: 'blur' }
-  ]
+  adminRemark: [{ max: 200, message: '备注不能超过 200 个字', trigger: 'blur' }]
 }
 
 const stats = computed(() => ({
-  total: allReservations.value.length,
-  pending: allReservations.value.filter(item => item.status === 'PENDING').length,
-  approved: allReservations.value.filter(item => item.status === 'APPROVED').length,
-  completed: allReservations.value.filter(item => item.status === 'COMPLETED').length
+  total: reservationList.value.length,
+  pending: reservationList.value.filter((item) => item.status === 'PENDING').length,
+  approved: reservationList.value.filter((item) => item.status === 'APPROVED').length,
+  completed: reservationList.value.filter((item) => item.status === 'COMPLETED').length
 }))
+
+const filteredList = computed(() => {
+  let list = [...reservationList.value]
+
+  if (activeTab.value !== 'ALL') {
+    list = list.filter((item) => item.status === activeTab.value)
+  }
+
+  if (isSearchMode.value && searchKeyword.value.trim()) {
+    const keyword = searchKeyword.value.trim().toLowerCase()
+    list = list.filter((item) =>
+      (item.facilityName || '').toLowerCase().includes(keyword) ||
+      (item.userName || '').toLowerCase().includes(keyword)
+    )
+  }
+
+  return list
+})
+
+const pagedList = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredList.value.slice(start, end)
+})
 
 onMounted(() => {
   loadReservationList()
@@ -273,27 +320,8 @@ onMounted(() => {
 const loadReservationList = async () => {
   try {
     loading.value = true
-    const res = await reservationAPI.list()
-    const source = Array.isArray(res.data) ? res.data : []
-    allReservations.value = source
-
-    let filtered = source
-    if (activeTab.value !== 'ALL') {
-      filtered = filtered.filter(item => item.status === activeTab.value)
-    }
-
-    if (isSearchMode.value && searchKeyword.value.trim()) {
-      const keyword = searchKeyword.value.trim().toLowerCase()
-      filtered = filtered.filter(item =>
-        (item.facilityName && item.facilityName.toLowerCase().includes(keyword)) ||
-        (item.userName && item.userName.toLowerCase().includes(keyword))
-      )
-    }
-
-    total.value = filtered.length
-    const startIndex = (pagination.value.page - 1) * pagination.value.size
-    const endIndex = startIndex + pagination.value.size
-    reservationList.value = filtered.slice(startIndex, endIndex)
+    const response = await reservationAPI.list()
+    reservationList.value = Array.isArray(response.data) ? response.data : []
   } catch (error) {
     console.error('加载预约列表失败:', error)
     ElMessage.error('加载预约列表失败')
@@ -302,304 +330,431 @@ const loadReservationList = async () => {
   }
 }
 
-const handleTabChange = () => {
-  pagination.value.page = 1
-  loadReservationList()
+const changeTab = (value) => {
+  activeTab.value = value
+  currentPage.value = 1
 }
 
 const handleSearch = () => {
-  pagination.value.page = 1
   isSearchMode.value = Boolean(searchKeyword.value.trim())
-  loadReservationList()
+  currentPage.value = 1
 }
 
 const handleClearSearch = () => {
   searchKeyword.value = ''
   isSearchMode.value = false
-  pagination.value.page = 1
-  loadReservationList()
+  currentPage.value = 1
 }
 
-const handleSizeChange = size => {
-  pagination.value.size = size
-  pagination.value.page = 1
-  loadReservationList()
+const handleSizeChange = (size) => {
+  pageSize.value = size
+  currentPage.value = 1
 }
 
-const handleCurrentChange = page => {
-  pagination.value.page = page
-  loadReservationList()
+const handleCurrentChange = (page) => {
+  currentPage.value = page
 }
 
-const handleRowClick = row => {
+const openDetail = (row) => {
   currentRow.value = row
   detailDialogVisible.value = true
 }
 
-const handleApprove = row => {
+const openAuditDialog = (row, action) => {
   currentRow.value = row
-  actionType.value = 'approve'
-  auditDialogTitle.value = '审核通过'
-  auditForm.value = { adminRemark: '' }
+  auditAction.value = action
+  auditForm.adminRemark = ''
   auditDialogVisible.value = true
 }
 
-const handleReject = row => {
-  currentRow.value = row
-  actionType.value = 'reject'
-  auditDialogTitle.value = '拒绝预约'
-  auditForm.value = { adminRemark: '' }
-  auditDialogVisible.value = true
-}
-
-const handleSubmit = async () => {
+const submitAudit = async () => {
   try {
     await formRef.value?.validate()
     submitLoading.value = true
 
-    if (actionType.value === 'approve') {
-      await reservationAPI.approve(currentRow.value.id, auditForm.value)
-      ElMessage.success('预约审核已通过')
+    if (auditAction.value === 'approve') {
+      await reservationAPI.approve(currentRow.value.id, { ...auditForm })
+      ElMessage.success('预约已审核通过')
     } else {
-      await reservationAPI.reject(currentRow.value.id, auditForm.value)
-      ElMessage.success('预约已拒绝')
+      await reservationAPI.reject(currentRow.value.id, { ...auditForm })
+      ElMessage.success('预约已驳回')
     }
 
     auditDialogVisible.value = false
-    await loadReservationList()
+    loadReservationList()
   } catch (error) {
     console.error('提交审核失败:', error)
-    ElMessage.error(formatActionMessage('提交审核失败', error.response?.data?.message, '提交审核失败，请稍后重试。'))
+    ElMessage.error(resolveApiError(error, '提交审核失败'))
   } finally {
     submitLoading.value = false
   }
 }
 
-const handleVerify = row => {
+const openVerifyDialog = (row) => {
   currentRow.value = row
   verifyDialogTitle.value = getVerifyActionText(row)
-  verifyForm.value = {
-    verificationCode: row.verificationCode || ''
-  }
+  verifyForm.verificationCode = row.verificationCode || ''
   verifyDialogVisible.value = true
 }
 
-const handleVerifySubmit = async () => {
-  const code = verifyForm.value.verificationCode.trim()
-  if (!code) {
+const submitVerify = async () => {
+  if (!verifyForm.verificationCode.trim()) {
     ElMessage.warning('请输入核销码')
     return
   }
 
   try {
     verifyLoading.value = true
-    await reservationAPI.verify(currentRow.value.id, code)
+    await reservationAPI.verify(currentRow.value.id, verifyForm.verificationCode.trim())
     ElMessage.success('现场核销成功')
     verifyDialogVisible.value = false
-    await loadReservationList()
+    loadReservationList()
   } catch (error) {
     console.error('现场核销失败:', error)
-    ElMessage.error(formatActionMessage('现场核销失败', error.response?.data?.message, '现场核销失败，请稍后重试。'))
+    ElMessage.error(resolveApiError(error, '现场核销失败'))
   } finally {
     verifyLoading.value = false
   }
 }
 
-const canVerify = row => (
+const canVerify = (row) =>
   row.status === 'APPROVED' &&
   ['NOT_CHECKED', 'CHECKED_IN'].includes(row.checkinStatus) &&
   Boolean(row.verificationCode)
-)
 
-const getVerifyActionText = row => (
+const getVerifyActionText = (row) =>
   row.checkinStatus === 'CHECKED_IN' ? '核销签退' : '核销签到'
-)
 
-const getStatusType = status => ({
+const getStatusType = (status) => ({
   PENDING: 'warning',
   APPROVED: 'success',
   REJECTED: 'danger',
   COMPLETED: 'info',
   CANCELLED: 'info'
-}[status] || '')
+}[status] || 'info')
 
-const getStatusText = status => ({
+const getStatusText = (status) => ({
   PENDING: '待审核',
   APPROVED: '已通过',
-  REJECTED: '已拒绝',
+  REJECTED: '已驳回',
   COMPLETED: '已完成',
   CANCELLED: '已取消'
-}[status] || status)
+}[status] || status || '-')
 
-const getCheckinStatusType = status => ({
+const getCheckinStatusType = (status) => ({
   NOT_CHECKED: 'info',
   CHECKED_IN: 'success',
   CHECKED_OUT: 'success',
   MISSED: 'danger'
-}[status] || '')
+}[status] || 'info')
 
-const getCheckinStatusText = status => ({
+const getCheckinStatusText = (status) => ({
   NOT_CHECKED: '未签到',
   CHECKED_IN: '已签到',
   CHECKED_OUT: '已签退',
-  MISSED: '失约'
-}[status] || status)
+  MISSED: '爽约'
+}[status] || status || '-')
+
+const formatDateTime = (value) => {
+  if (!value) {
+    return '-'
+  }
+  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+}
+
+const resolveApiError = (error, fallback) =>
+  error?.response?.data?.message || error?.message || fallback
 </script>
 
 <style scoped>
-.maintainer-reservation-page {
-  min-height: calc(100vh - 88px);
+.reservation-theme {
+  --theme-main: #d97706;
+  --theme-soft: rgba(217, 119, 6, 0.12);
+  --theme-border: rgba(217, 119, 6, 0.14);
+  --theme-shadow: rgba(217, 119, 6, 0.16);
+  padding: 24px;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(251, 191, 36, 0.2), transparent 26%),
+    linear-gradient(180deg, #fff9ed 0%, #fffdf7 48%, #fff7e8 100%);
 }
 
-.page-header,
-.toolbar-card,
-.table-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+.page-hero,
+.control-card,
+.panel-card {
+  animation: rise-in 0.55s ease both;
 }
 
-.page-header {
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 24px;
+.page-hero {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid var(--theme-border);
+  box-shadow: 0 24px 60px var(--theme-shadow);
 }
 
-.header-decoration {
-  height: 4px;
-  background: linear-gradient(90deg, #0f766e, #14b8a6, #f59e0b);
-}
-
-.header-content {
-  padding: 28px 32px;
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0;
-  color: #0f172a;
-  font-size: 28px;
-}
-
-.title-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+.eyebrow {
   display: inline-flex;
-  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--theme-soft);
+  color: var(--theme-main);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-copy h1 {
+  margin: 14px 0 10px;
+  font-size: 32px;
+  color: #0f172a;
+}
+
+.hero-copy p {
+  margin: 0;
+  color: #5b6470;
+  line-height: 1.7;
+}
+
+.hero-aside {
+  display: grid;
+  gap: 14px;
+}
+
+.mini-card {
+  display: flex;
+  flex-direction: column;
   justify-content: center;
-  background: linear-gradient(135deg, #ccfbf1, #99f6e4);
-  color: #0f766e;
+  min-height: 110px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #fff5df 0%, #ffffff 100%);
+  border: 1px solid var(--theme-border);
 }
 
-.page-subtitle {
-  margin: 10px 0 0 60px;
-  color: #64748b;
+.mini-card span {
+  color: #6b7280;
+  font-size: 13px;
 }
 
-.stats-grid {
+.mini-card strong {
+  margin-top: 10px;
+  color: #4b2c08;
+  font-size: 24px;
+}
+
+.summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  margin-bottom: 24px;
+  margin-top: 22px;
 }
 
-.stat-card {
-  padding: 22px 24px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
-  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.12);
+.summary-card {
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px rgba(17, 24, 39, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.stat-card.warning {
-  background: linear-gradient(135deg, #fff7ed, #ffedd5);
-  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.14);
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 46px rgba(17, 24, 39, 0.1);
 }
 
-.stat-card.success {
-  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.14);
+.summary-label {
+  color: #6b7280;
+  font-size: 13px;
 }
 
-.stat-card.info {
-  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-  box-shadow: 0 10px 24px rgba(100, 116, 139, 0.14);
-}
-
-.stat-label {
-  color: #475569;
-  font-size: 14px;
-}
-
-.stat-value {
+.summary-card strong {
+  display: block;
   margin-top: 10px;
-  font-size: 30px;
-  font-weight: 700;
+  font-size: 28px;
   color: #0f172a;
 }
 
-.toolbar-card {
-  padding: 20px 24px;
-  margin-bottom: 24px;
+.control-card,
+.panel-card {
+  margin-top: 20px;
+  padding: 22px 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 42px rgba(17, 24, 39, 0.08);
 }
 
-.toolbar {
+.control-card {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.control-copy h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #3f2a0b;
+}
+
+.control-copy p {
+  margin: 8px 0 0;
+  color: #667085;
+  font-size: 13px;
+}
+
+.control-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 18px;
+  background: #fff7eb;
+}
+
+.filter-chip {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: #7c5e32;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.filter-chip.active {
+  background: #ffffff;
+  color: #a95510;
+  box-shadow: 0 8px 20px rgba(217, 119, 6, 0.14);
 }
 
 .search-input {
-  max-width: 420px;
+  width: 260px;
 }
 
-.table-card {
-  padding: 16px 16px 8px;
-}
-
-.action-buttons {
+.time-stack {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.time-stack small {
+  color: #6b7280;
+}
+
+.row-actions {
+  display: flex;
   justify-content: center;
-  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .pagination-wrap {
   display: flex;
-  justify-content: center;
-  padding: 20px 0 8px;
+  justify-content: flex-end;
+  margin-top: 18px;
 }
 
-.verify-info {
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.detail-item {
+  padding: 16px;
+  border-radius: 18px;
+  background: #fff8ef;
+}
+
+.detail-item.full {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.detail-item strong,
+.detail-item p {
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.7;
+}
+
+.verify-panel {
+  padding: 16px;
   margin-bottom: 12px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: #f8fafc;
-  color: #334155;
+  border-radius: 18px;
+  background: #fff8ef;
 }
 
-.verify-info p {
-  margin: 6px 0;
+.verify-panel p {
+  margin: 0 0 8px;
+  color: #1f2937;
+  font-weight: 700;
 }
 
-@media (max-width: 960px) {
-  .stats-grid {
+.verify-panel span {
+  color: #6b7280;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1200px) {
+  .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 640px) {
-  .stats-grid {
+@media (max-width: 900px) {
+  .page-hero,
+  .control-card {
     grid-template-columns: 1fr;
   }
 
-  .page-title {
-    font-size: 24px;
+  .control-card {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 768px) {
+  .reservation-theme {
+    padding: 16px;
   }
 
-  .page-subtitle {
-    margin-left: 0;
+  .summary-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .search-input {
+    width: 100%;
   }
 }
 </style>
