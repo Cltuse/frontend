@@ -112,6 +112,7 @@ export const reservationAPI = {
     delete: (id) => request.delete(`/reservation/${id}`),
     getStatsByTimeRange: (range) => request.get('/reservation/stats/time-range', { params: { range } }),
     getCategoryStats: (range) => request.get('/reservation/stats/category', { params: { range } }),
+    getHeatmapStats: (range) => request.get('/reservation/stats/heatmap', { params: { range } }),
     // 检查入
     checkin: (id) => request.put(`/reservation/${id}/checkin`),
     checkout: (id) => request.put(`/reservation/${id}/checkout`),
