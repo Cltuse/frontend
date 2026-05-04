@@ -98,11 +98,11 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="180" fixed="right" align="center">
+        <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
             <div class="row-actions">
-              <el-button link type="primary" @click.stop="handleEdit(row)">编辑</el-button>
-              <el-button link type="danger" @click.stop="handleDelete(row)">删除</el-button>
+              <el-button class="action-btn edit-btn" @click.stop="handleEdit(row)">编辑</el-button>
+              <el-button class="delete-btn" @click.stop="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -631,6 +631,8 @@ async function handleSubmit() {
 
 .row-actions {
   justify-content: center;
+  flex-wrap: nowrap;
+  gap: 10px;
 }
 
 .pagination-wrap {

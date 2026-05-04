@@ -91,11 +91,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" align="center">
+        <el-table-column label="操作" width="260" align="center">
           <template #default="{ row }">
             <div class="row-actions">
-              <el-button size="small" class="action-btn detail-btn" @click="handleRowClick(row)">详情</el-button>
-              <el-button size="small" class="action-btn delete-btn" @click="handleDelete(row)">删除</el-button>
+              <el-button size="small" type="primary" @click="handleRowClick(row)">详情</el-button>
+              <el-button size="small" :type="row.status === 'MAINTENANCE' ? 'warning' : 'default'" @click="handleEditStatus(row)">{{ row.status === 'MAINTENANCE' ? '恢复可用' : '开始维护' }}</el-button>
             </div>
           </template>
         </el-table-column>
@@ -143,8 +143,7 @@
           <div class="detail-info-card">
             <span class="detail-label">采购时间</span>
             <strong>{{ formatDate(selectedFacility.purchaseDate) }}</strong>
-          </div>
-          
+          </div>          
           <div class="detail-info-card">
             <span class="detail-label">价格</span>
             <strong>{{ formatPrice(selectedFacility.price) }}</strong>
@@ -222,6 +221,30 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="statusDialogVisible" :title="statusDialogTitle" width="420px" destroy-on-close>
+      <el-form ref="statusFormRef" :model="statusForm" label-width="100px">
+        <el-form-item label="设施名称">
+          <strong>{{ statusTarget?.name || '-' }}</strong>
+        </el-form-item>
+        <el-form-item label="当前状态">
+          <el-tag :type="statusType(statusTarget?.status)">{{ statusLabel(statusTarget?.status) }}</el-tag>
+        </el-form-item>
+        <el-form-item :label="statusTarget?.status === 'MAINTENANCE' ? '恢复说明' : '维护说明'" prop="reason">
+          <el-input
+            v-model="statusForm.reason"
+            type="textarea"
+            :rows="3"
+            :placeholder="statusTarget?.status === 'MAINTENANCE' ? '填写恢复可用说明' : '填写开始维护说明'"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="statusDialogVisible = false">取消</el-button>
+        <el-button :type="statusTarget?.status === 'MAINTENANCE' ? 'primary' : 'warning'" :loading="statusLoading" @click="confirmStatusChange">
+          {{ statusTarget?.status === 'MAINTENANCE' ? '确认恢复' : '确认开始维护' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -229,7 +252,7 @@
 import { onMounted, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { facilityAPI, facilityCategoryAPI } from '../../api'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { buildFeatureVars, getRoleTheme } from '../../utils/featureTheme'
 const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
 const theme = getRoleTheme(userInfo.role || 'maintainer')
@@ -237,6 +260,7 @@ const featureVars = buildFeatureVars(theme)
 
 const tableRef = ref(null)
 const createFormRef = ref(null)
+const statusFormRef = ref(null)
 
 const searchKeyword = ref('')
 const facilities = ref([])
@@ -265,6 +289,11 @@ const createRules = {
 }
 
 const detailDialogVisible = ref(false)
+const statusDialogVisible = ref(false)
+const statusLoading = ref(false)
+const statusTarget = ref(null)
+const statusForm = ref({ reason: '' })
+const statusDialogTitle = ref('')
 
 const pagination = ref({
   current: 1,
@@ -426,31 +455,26 @@ const handleCreate = async () => {
   }
 }
 
-const handleDelete = async (row) => {
+const handleEditStatus = (row) => {
+  statusTarget.value = row
+  statusForm.value = { reason: '' }
+  statusDialogTitle.value = row.status === 'MAINTENANCE' ? '恢复可用' : '开始维护'
+  statusDialogVisible.value = true
+}
+
+const confirmStatusChange = async () => {
+  statusLoading.value = true
   try {
-    await ElMessageBox.confirm(`确定删除设施「${row.name}」吗？删除后将无法恢复。`, '删除确认', {
-      type: 'warning',
-      confirmButtonText: '确认删除',
-      cancelButtonText: '取消',
-      confirmButtonClass: 'el-button--danger'
-    })
-    await facilityAPI.deleteFacility(row.id)
-    ElMessage.success('删除成功')
+    const targetStatus = statusTarget.value.status === 'MAINTENANCE' ? 'AVAILABLE' : 'MAINTENANCE'
+    await facilityAPI.updateFacilityStatus(statusTarget.value.id, targetStatus, statusForm.value.reason)
+    ElMessage.success('状态更新成功')
+    statusDialogVisible.value = false
     await loadFacilities()
-    const maxPage = Math.max(1, Math.ceil(pagination.value.total / pagination.value.pageSize))
-    if (pagination.value.current > maxPage) {
-      pagination.value.current = maxPage
-    }
     applyPagination()
-    if (selectedFacility.value?.id === row.id) {
-      detailDialogVisible.value = false
-      selectedFacility.value = null
-      facilityTimeline.value = []
-    }
   } catch (error) {
-    if (error === 'cancel') return
-    console.error('删除设施失败', error)
-    ElMessage.error('删除设施失败')
+    console.error('状态更新失败', error)
+  } finally {
+    statusLoading.value = false
   }
 }
 
@@ -690,44 +714,6 @@ const formatDateTime = (value) => {
   display: flex;
   justify-content: center;
   gap: 10px;
-}
-
-.action-btn {
-  min-height: 38px;
-  padding: 0 18px;
-  border-radius: 999px;
-  font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-}
-
-.action-btn:hover {
-  transform: translateY(-1px);
-}
-
-.detail-btn {
-  border-color: color-mix(in srgb, var(--feature-primary) 24%, transparent) !important;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--feature-primary) 88%, #ffffff 12%) 0%, var(--feature-primary) 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 12px 24px color-mix(in srgb, var(--feature-primary) 22%, transparent);
-}
-
-.detail-btn:hover {
-  border-color: color-mix(in srgb, var(--feature-primary-deep) 34%, transparent) !important;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--feature-primary-deep) 82%, #ffffff 18%) 0%, var(--feature-primary) 100%) !important;
-  color: #ffffff !important;
-}
-
-.delete-btn {
-  border-color: color-mix(in srgb, #d46a6a 26%, var(--feature-soft) 74%) !important;
-  background: linear-gradient(135deg, #fff6f4 0%, color-mix(in srgb, #f4d6d0 54%, #ffffff 46%) 100%) !important;
-  color: #c15b5b !important;
-  box-shadow: 0 10px 20px rgba(212, 106, 106, 0.12);
-}
-
-.delete-btn:hover {
-  border-color: color-mix(in srgb, #c75555 36%, var(--feature-soft) 64%) !important;
-  background: linear-gradient(135deg, #fce8e4 0%, #f5d0c9 100%) !important;
-  color: #af4747 !important;
 }
 
 .facility-detail-dialog :deep(.el-dialog__body) {

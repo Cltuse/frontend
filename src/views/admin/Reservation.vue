@@ -76,7 +76,7 @@
 
     </section>
 
-    <section class="panel-card">
+    <section class="panel-card" :style="{ '--reservation-page-size': pagination.size }">
       <div class="panel-head">
         <div class="section-copy">
           <h2>预约记录列表</h2>
@@ -129,8 +129,9 @@
         </el-table-column>
       </el-table>
 
-      <div class="pagination-wrap" v-if="total > 0">
+      <div class="pagination-wrap">
         <el-pagination
+          v-if="total > 0"
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.size"
           :page-sizes="[10, 20, 50, 100]"
@@ -410,8 +411,10 @@ const getCheckinStatusText = (status) =>
 .page-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) 320px;
+  align-items: start;
   gap: 20px;
   padding: 30px;
+  min-height: 206px;
   background:
     radial-gradient(circle at top right, var(--theme-soft), transparent 30%),
     linear-gradient(145deg, rgba(240, 249, 252, 0.98) 0%, #ffffff 62%);
@@ -460,6 +463,9 @@ const getCheckinStatusText = (status) =>
 
 .hero-actions {
   margin-top: 24px;
+  justify-content: flex-end;
+  align-self: start;
+  min-height: 44px;
 }
 
 .primary-btn,
@@ -557,6 +563,7 @@ const getCheckinStatusText = (status) =>
 .panel-card {
   display: flex;
   flex-direction: column;
+  min-height: clamp(560px, calc(var(--reservation-page-size, 10) * 54px + 170px), 760px);
 }
 
 .status-tabs {
@@ -630,6 +637,14 @@ const getCheckinStatusText = (status) =>
   border-radius: 20px;
 }
 
+.reservation-table {
+  flex: 1;
+}
+
+.reservation-table :deep(.el-table__inner-wrapper) {
+  min-height: clamp(320px, calc(var(--reservation-page-size, 10) * 48px), 520px);
+}
+
 .reservation-table :deep(.el-table__empty-block) {
   min-height: 220px;
 }
@@ -658,6 +673,8 @@ const getCheckinStatusText = (status) =>
   display: flex;
   justify-content: flex-end;
   margin-top: 20px;
+  min-height: 40px;
+  align-items: center;
 }
 
 .detail-dialog :deep(.el-dialog) {

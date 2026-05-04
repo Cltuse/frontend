@@ -245,8 +245,8 @@ const handleMenuSelect = (index) => {
 .content-area {
   flex: 1;
   padding: 24px;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
+  overflow-y: scroll;
+  scrollbar-gutter: stable both-edges;
   background: var(--content-area-bg);
 }
 
