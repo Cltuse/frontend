@@ -172,7 +172,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="250" align="center" fixed="right">
+        <el-table-column label="操作" width="190" align="center" fixed="right">
           <template #default="{ row }">
             <div class="row-actions">
               <el-button class="action-btn" @click.stop="showViolationDetail(row)">

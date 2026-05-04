@@ -1,20 +1,12 @@
 <template>
-  <div class="my-reservation-page">
-    <!-- 页面标题区域 -->
-    <div class="page-header">
-      <div class="header-decoration"></div>
-      <div class="header-content">
-        <h1 class="page-title">
-          <div class="title-icon">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          我的预约
-        </h1>
-        <p class="page-subtitle">管理我的设施预约记录</p>
+  <div class="page-shell my-reservation-page">
+    <section class="page-hero">
+      <div class="hero-copy">
+        <span class="hero-kicker">预约管理</span>
+        <h1>我的预约</h1>
+        <p>集中查看预约进度、签到状态和历史记录，保持用户端预约管理体验清晰统一。</p>
       </div>
-    </div>
+    </section>
 
     <section class="summary-grid">
       <article class="summary-card">
@@ -988,6 +980,139 @@ const getCheckinStatusText = (checkinStatus) => {
   .dialog-footer {
     padding-left: 18px;
     padding-right: 18px;
+  }
+}
+</style>
+<style scoped>
+.my-reservation-page {
+  --theme-main: color-mix(in srgb, var(--feature-primary) 54%, #b58b61 46%);
+  --theme-deep: color-mix(in srgb, var(--feature-primary-deep) 78%, #6f5337 22%);
+  --theme-soft: color-mix(in srgb, var(--feature-soft-bg) 82%, #fff7ef 18%);
+  --theme-border: var(--feature-border);
+  --theme-shadow: color-mix(in srgb, var(--feature-primary) 12%, transparent);
+}
+
+.my-reservation-page .page-hero {
+  padding: 30px;
+}
+
+.my-reservation-page .hero-kicker {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--feature-chip-bg);
+  color: var(--feature-primary-deep);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.my-reservation-page .hero-copy h1 {
+  margin: 16px 0 12px;
+  font-size: 36px;
+  color: var(--feature-strong);
+}
+
+.my-reservation-page .hero-copy p {
+  margin: 0;
+  color: color-mix(in srgb, var(--feature-strong) 62%, #7f9084 38%);
+  line-height: 1.8;
+}
+
+.my-reservation-page .summary-card strong,
+.my-reservation-page .facility-name,
+.my-reservation-page .dialog-title-text {
+  color: var(--feature-strong);
+}
+
+.my-reservation-page .summary-label,
+.my-reservation-page .summary-card p,
+.my-reservation-page .time-info,
+.my-reservation-page .purpose-info,
+.my-reservation-page .description-value,
+.my-reservation-page .page-subtitle {
+  color: color-mix(in srgb, var(--feature-strong) 62%, #7f9084 38%);
+}
+
+.my-reservation-page .search-input :deep(.el-input__wrapper) {
+  border-color: var(--feature-border);
+  background: color-mix(in srgb, var(--feature-soft-bg) 72%, #ffffff 28%);
+}
+
+.my-reservation-page .search-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--feature-primary) 12%, transparent);
+}
+
+.my-reservation-page .reservation-table :deep(.el-table__header-wrapper th.el-table__cell) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--feature-soft-bg) 78%, #ffffff 22%) 0%, #f8f2e9 100%) !important;
+  color: var(--feature-strong);
+  border-bottom-color: color-mix(in srgb, var(--feature-primary) 16%, #ddd2c0 84%);
+}
+
+.my-reservation-page .reservation-table :deep(.el-table__body td.el-table__cell) {
+  border-bottom-color: color-mix(in srgb, var(--feature-primary) 10%, #ece4d8 90%);
+  background: rgba(255, 255, 255, 0.94);
+  color: color-mix(in srgb, var(--feature-strong) 72%, #756759 28%);
+}
+
+.my-reservation-page .reservation-table :deep(.el-table__body tr:hover > td.el-table__cell) {
+  background: color-mix(in srgb, var(--feature-soft-bg) 86%, #fffaf3 14%) !important;
+}
+
+.my-reservation-page .status-tag {
+  color: inherit;
+}
+
+.my-reservation-page .view-btn {
+  min-height: 36px;
+  padding: 0 18px;
+  border-radius: 999px !important;
+  color: color-mix(in srgb, var(--feature-primary-deep) 82%, #6b5b49 18%) !important;
+  border-color: color-mix(in srgb, var(--feature-primary) 16%, #ddd1bf 84%) !important;
+  background: color-mix(in srgb, var(--feature-soft-bg) 78%, #fff7ef 22%) !important;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--feature-primary) 8%, transparent) !important;
+}
+
+.my-reservation-page .view-btn:hover:not(.is-disabled) {
+  background: color-mix(in srgb, var(--feature-soft-bg) 82%, #fff8f1 18%) !important;
+  color: color-mix(in srgb, var(--feature-primary-deep) 84%, #665747 16%) !important;
+  border-color: color-mix(in srgb, var(--feature-primary) 18%, #d9cab8 82%) !important;
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--feature-primary) 9%, transparent) !important;
+}
+
+.my-reservation-page .view-btn:active:not(.is-disabled),
+.my-reservation-page .view-btn:focus-visible:not(.is-disabled) {
+  background: linear-gradient(135deg, var(--theme-main) 0%, var(--theme-deep) 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--feature-primary) 20%, transparent) !important;
+}
+
+.my-reservation-page .checkin-btn:hover:not(.is-disabled) {
+  background: linear-gradient(135deg, var(--theme-main) 0%, var(--theme-deep) 100%);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--feature-primary) 20%, transparent);
+}
+
+.my-reservation-page .pagination-container :deep(.el-pagination .el-pager li.is-active) {
+  background: linear-gradient(135deg, var(--theme-main) 0%, var(--theme-deep) 100%);
+}
+
+.my-reservation-page .dialog-title-icon {
+  background: color-mix(in srgb, var(--feature-primary) 16%, #ffffff 84%);
+}
+
+.my-reservation-page .dialog-footer .cancel-btn {
+  color: color-mix(in srgb, var(--feature-strong) 62%, #7f9084 38%);
+  border-color: var(--feature-border);
+}
+
+@media (max-width: 768px) {
+  .my-reservation-page .page-hero {
+    padding: 18px;
+  }
+
+  .my-reservation-page .hero-copy h1 {
+    font-size: 28px;
   }
 }
 </style>

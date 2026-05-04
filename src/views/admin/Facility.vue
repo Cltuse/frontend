@@ -147,12 +147,12 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="240" fixed="right" align="center">
+        <el-table-column label="操作" width="260" fixed="right" align="center">
           <template #default="{ row }">
             <div class="row-actions">
-              <el-button link type="primary" @click.stop="handleEdit(row)">编辑</el-button>
-              <el-button link type="warning" @click.stop="handleImageUpload(row)">图片</el-button>
-              <el-button link type="danger" @click.stop="handleDelete(row)">删除</el-button>
+              <el-button class="table-action-btn edit-action-btn" @click.stop="handleEdit(row)">编辑</el-button>
+              <el-button class="table-action-btn image-action-btn" @click.stop="handleImageUpload(row)">图片</el-button>
+              <el-button class="table-action-btn delete-action-btn" @click.stop="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -1126,6 +1126,69 @@ function releasePreviewUrl(url) {
 
 .row-actions {
   justify-content: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.table-action-btn {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.table-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.edit-action-btn {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #78a7d7 0%, #5f8fca 100%);
+  box-shadow: 0 10px 20px rgba(95, 143, 202, 0.18);
+}
+
+.edit-action-btn:hover {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #6b9ed2 0%, #4f81c1 100%);
+  box-shadow: 0 12px 24px rgba(79, 129, 193, 0.24);
+}
+
+.image-action-btn {
+  color: #557d96;
+  border-color: rgba(123, 170, 205, 0.24);
+  background: linear-gradient(135deg, rgba(245, 250, 255, 0.98) 0%, rgba(235, 244, 252, 0.96) 100%);
+  box-shadow: 0 8px 18px rgba(123, 170, 205, 0.1);
+}
+
+.image-action-btn:hover {
+  color: #476d86;
+  border-color: rgba(95, 143, 202, 0.28);
+  background: linear-gradient(135deg, rgba(238, 247, 255, 0.98) 0%, rgba(225, 237, 249, 0.98) 100%);
+  box-shadow: 0 10px 20px rgba(95, 143, 202, 0.14);
+}
+
+.delete-action-btn {
+  color: #c86472;
+  border-color: rgba(233, 152, 164, 0.24);
+  background: linear-gradient(135deg, rgba(255, 247, 248, 0.98) 0%, rgba(253, 238, 241, 0.98) 100%);
+  box-shadow: 0 8px 18px rgba(212, 107, 122, 0.1);
+}
+
+.delete-action-btn:hover {
+  color: #b95463;
+  border-color: rgba(212, 107, 122, 0.28);
+  background: linear-gradient(135deg, rgba(255, 240, 243, 0.98) 0%, rgba(251, 228, 233, 0.98) 100%);
+  box-shadow: 0 10px 20px rgba(212, 107, 122, 0.14);
 }
 
 .pagination-wrap {

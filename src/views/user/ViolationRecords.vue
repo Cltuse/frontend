@@ -362,8 +362,8 @@ const getStatusText = (status) => {
 };
 
 const headerCellStyle = {
-  backgroundColor: '#fffafb',
-  color: '#7a4052',
+  backgroundColor: '#f8f3ec',
+  color: '#5f5243',
   fontWeight: '600',
   fontSize: '14px',
   borderBottom: '1px solid rgba(245, 183, 192, 0.16)'
@@ -372,7 +372,7 @@ const headerCellStyle = {
 const cellStyle = () => ({
   padding: '16px 12px',
   borderBottom: '1px solid #fce4e8',
-  color: '#755e59',
+  color: '#6a6155',
   fontSize: '14px'
 });
 </script>
@@ -517,7 +517,7 @@ const cellStyle = () => ({
 
 .description-text,
 .time-text {
-  color: #755e59;
+  color: #6a6155;
   line-height: 1.6;
 }
 
@@ -667,7 +667,8 @@ const cellStyle = () => ({
 }
 
 .violation-table :deep(.el-table__header-wrapper th.el-table__cell) {
-  background: linear-gradient(180deg, #fffafb 0%, #fce4e8 100%) !important;
+  background: linear-gradient(180deg, #fdfaf5 0%, #f3eadf 100%) !important;
+  color: #5f5243 !important;
 }
 
 .violation-table :deep(.el-table::before),

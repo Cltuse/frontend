@@ -88,7 +88,13 @@
         </div>
       </div>
 
-      <el-table :data="reservationList" v-loading="loading" class="reservation-table" @row-click="handleRowClick">
+      <el-table
+        :data="reservationList"
+        v-loading="loading"
+        class="reservation-table"
+        empty-text="当前没有符合条件的预约记录"
+        @row-click="handleRowClick"
+      >
         <el-table-column prop="facilityName" label="设施名称" min-width="160" />
         <el-table-column prop="userName" label="申请人" min-width="120" />
         <el-table-column prop="startTime" label="开始时间" min-width="170" />
@@ -122,8 +128,6 @@
           </template>
         </el-table-column>
       </el-table>
-
-      <el-empty v-if="!loading && !reservationList.length" description="当前没有符合条件的预约记录" />
 
       <div class="pagination-wrap" v-if="total > 0">
         <el-pagination
@@ -550,6 +554,11 @@ const getCheckinStatusText = (status) =>
   padding: 24px;
 }
 
+.panel-card {
+  display: flex;
+  flex-direction: column;
+}
+
 .status-tabs {
   margin-top: 4px;
 }
@@ -619,6 +628,14 @@ const getCheckinStatusText = (status) =>
   --el-table-border-color: rgba(132, 165, 205, 0.12);
   --el-table-row-hover-bg-color: rgba(243, 250, 252, 0.95);
   border-radius: 20px;
+}
+
+.reservation-table :deep(.el-table__empty-block) {
+  min-height: 220px;
+}
+
+.reservation-table :deep(.el-table__empty-text) {
+  color: #7a8ca4;
 }
 
 .reservation-table :deep(.el-table::before),

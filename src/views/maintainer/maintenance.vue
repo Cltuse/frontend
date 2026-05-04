@@ -34,19 +34,33 @@
       </div>
 
       <div class="control-actions">
-        <el-select v-model="maintenanceStatusFilter" clearable placeholder="维护完成度" @change="handleFilterChange">
-          <el-option label="全部记录" value="" />
-          <el-option label="已维护" value="MAINTAINED" />
-          <el-option label="未维护" value="UNMAINTAINED" />
-        </el-select>
-        <el-select v-model="statusFilter" clearable placeholder="任务状态" @change="handleFilterChange">
-          <el-option label="全部状态" value="" />
-          <el-option label="待处理" value="PENDING" />
-          <el-option label="进行中" value="IN_PROGRESS" />
-          <el-option label="已完成" value="COMPLETED" />
-          <el-option label="已取消" value="CANCELLED" />
-        </el-select>
-        <el-button type="primary" @click="openCreateDialog">新建维护</el-button>
+        <div class="filter-row">
+          <el-select
+            v-model="maintenanceStatusFilter"
+            clearable
+            placeholder="维护完成度"
+            class="filter-select"
+            @change="handleFilterChange"
+          >
+            <el-option label="全部记录" value="" />
+            <el-option label="已维护" value="MAINTAINED" />
+            <el-option label="未维护" value="UNMAINTAINED" />
+          </el-select>
+          <el-select
+            v-model="statusFilter"
+            clearable
+            placeholder="任务状态"
+            class="filter-select"
+            @change="handleFilterChange"
+          >
+            <el-option label="全部状态" value="" />
+            <el-option label="待处理" value="PENDING" />
+            <el-option label="进行中" value="IN_PROGRESS" />
+            <el-option label="已完成" value="COMPLETED" />
+            <el-option label="已取消" value="CANCELLED" />
+          </el-select>
+          <el-button type="primary" class="create-maintenance-btn" @click="openCreateDialog">新建维护</el-button>
+        </div>
       </div>
     </section>
 
@@ -186,6 +200,16 @@
             />
           </el-select>
         </el-form-item>
+        <div v-if="selectedFacilityOption" class="facility-preview-card">
+          <div class="facility-preview-media">
+            <img :src="getFacilityImageSrc(selectedFacilityOption.image || selectedFacilityOption.imageUrl)" :alt="selectedFacilityOption.name" />
+          </div>
+          <div class="facility-preview-copy">
+            <strong>{{ selectedFacilityOption.name }}</strong>
+            <span>{{ selectedFacilityOption.location || '位置待补充' }}</span>
+            <small>{{ selectedFacilityOption.categoryName || selectedFacilityOption.category || '未分类设施' }}</small>
+          </div>
+        </div>
         <el-form-item label="维护类型" prop="maintenanceType">
           <el-radio-group v-model="form.maintenanceType">
             <el-radio-button label="ROUTINE">常规维护</el-radio-button>
@@ -332,6 +356,10 @@ const stats = computed(() => ({
   completed: maintenanceList.value.filter((item) => item.status === 'COMPLETED').length
 }))
 
+const selectedFacilityOption = computed(() =>
+  facilityOptions.value.find((facility) => String(facility.id) === String(form.facilityId)) || null
+)
+
 const filteredList = computed(() => {
   let list = [...maintenanceList.value]
 
@@ -345,7 +373,7 @@ const filteredList = computed(() => {
     list = list.filter((item) => item.status === statusFilter.value)
   }
 
-  return list
+  return list.sort(compareMaintenanceRecords)
 })
 
 const pagedList = computed(() => {
@@ -395,7 +423,8 @@ const loadMaintenanceList = async () => {
     const response = userId
       ? await maintenanceAPI.getByMaintainerId(userId)
       : await maintenanceAPI.list()
-    maintenanceList.value = response.data || []
+    const rawList = response.data?.list || response.data?.records || response.data || []
+    maintenanceList.value = Array.isArray(rawList) ? rawList : []
   } catch (error) {
     console.error('加载维护任务失败:', error)
     ElMessage.error('加载维护任务失败')
@@ -408,7 +437,15 @@ const loadMaintenanceList = async () => {
 const loadFacilities = async () => {
   try {
     const response = await facilityAPI.list()
-    facilityOptions.value = response.data || []
+    const rawList = response.data?.list || response.data?.records || response.data || []
+    facilityOptions.value = Array.isArray(rawList)
+      ? rawList.map((facility) => ({
+          ...facility,
+          categoryName: facility.categoryName || facility.category || '',
+          image: facility.image || facility.imageUrl || '',
+          imageUrl: facility.imageUrl || facility.image || ''
+        }))
+      : []
   } catch (error) {
     console.error('加载场地选项失败:', error)
     ElMessage.error('加载场地选项失败')
@@ -550,6 +587,19 @@ const normalizeMaintenanceType = (type) => {
   return map[type] || 'OTHER'
 }
 
+const compareMaintenanceRecords = (a, b) => {
+  const getSortValue = (item) => {
+    const timeValue = item.createdAt || item.startTime || item.updatedAt || item.endTime || ''
+    const timestamp = timeValue ? new Date(timeValue).getTime() : 0
+    if (Number.isNaN(timestamp) || timestamp === 0) {
+      return Number(item.id || 0)
+    }
+    return timestamp
+  }
+
+  return getSortValue(b) - getSortValue(a)
+}
+
 const getMaintenanceTypeText = (type) => ({
   ROUTINE: '常规维护',
   REPAIR: '故障维修',
@@ -604,6 +654,12 @@ const formatCurrency = (value) => {
     return value
   }
   return `¥${numberValue.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
+const getFacilityImageSrc = (image) => {
+  if (!image) return '/files/facility/default-facility.svg'
+  if (image.startsWith('http') || image.startsWith('/')) return image
+  return `http://localhost:8081/api/files/${image}`
 }
 </script>
 
@@ -745,9 +801,25 @@ const formatCurrency = (value) => {
 
 .control-actions {
   display: flex;
-  gap: 12px;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.filter-select {
+  width: 180px;
+}
+
+.create-maintenance-btn {
+  min-width: 108px;
 }
 
 .row-actions {
@@ -770,6 +842,50 @@ const formatCurrency = (value) => {
   display: flex;
   justify-content: flex-end;
   margin-top: 18px;
+}
+
+.facility-preview-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 16px;
+  margin: -2px 0 8px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--feature-surface) 0%, #ffffff 100%);
+  border: 1px solid var(--feature-soft);
+}
+
+.facility-preview-media {
+  width: 112px;
+  height: 88px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.facility-preview-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.facility-preview-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.facility-preview-copy strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.facility-preview-copy span,
+.facility-preview-copy small {
+  color: #6b7280;
+  line-height: 1.5;
 }
 
 .detail-grid {
@@ -828,6 +944,20 @@ const formatCurrency = (value) => {
   .control-card {
     align-items: stretch;
   }
+
+  .control-actions,
+  .filter-row {
+    justify-content: stretch;
+  }
+
+  .filter-row {
+    flex-wrap: wrap;
+  }
+
+  .filter-select,
+  .create-maintenance-btn {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -838,6 +968,15 @@ const formatCurrency = (value) => {
   .summary-grid,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .facility-preview-card {
+    grid-template-columns: 1fr;
+  }
+
+  .facility-preview-media {
+    width: 100%;
+    height: 180px;
   }
 }
 </style>

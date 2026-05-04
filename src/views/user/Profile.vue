@@ -719,6 +719,80 @@ onMounted(() => {
 </style>
 <style scoped>
 .profile-page {
+  --theme-main: color-mix(in srgb, var(--feature-primary) 54%, #b58b61 46%);
+  --theme-deep: color-mix(in srgb, var(--feature-primary-deep) 78%, #6f5337 22%);
+  --theme-soft: color-mix(in srgb, var(--feature-soft-bg) 82%, #fff7ef 18%);
+  --theme-border: var(--feature-border);
+  --theme-shadow: color-mix(in srgb, var(--feature-primary) 12%, transparent);
+  --theme-surface: color-mix(in srgb, var(--feature-soft-bg) 84%, #fffaf4 16%);
+}
+
+.profile-page .header-content {
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--feature-soft-bg) 88%, #ffffff 12%), transparent 24%),
+    linear-gradient(145deg, color-mix(in srgb, var(--feature-soft-bg) 76%, #ffffff 24%) 0%, #ffffff 64%);
+}
+
+.profile-page .page-kicker,
+.profile-page .dialog-kicker {
+  background: var(--feature-chip-bg);
+  color: var(--feature-primary-deep);
+}
+
+.profile-page .page-title,
+.profile-page .summary-card strong,
+.profile-page .card-copy h2,
+.profile-page .info-row strong,
+.profile-page .security-item strong,
+.profile-page .dialog-header h3 {
+  color: var(--feature-strong);
+}
+
+.profile-page .page-subtitle,
+.profile-page .summary-label,
+.profile-page .summary-card p,
+.profile-page .card-copy p,
+.profile-page .info-row label,
+.profile-page .security-item p,
+.profile-page .upload-copy p {
+  color: color-mix(in srgb, var(--feature-strong) 62%, #7f9084 38%);
+}
+
+.profile-page .summary-card {
+  background: linear-gradient(150deg, color-mix(in srgb, var(--feature-soft-bg) 76%, #ffffff 24%) 0%, #ffffff 82%);
+}
+
+.profile-page .info-row,
+.profile-page .security-item,
+.profile-page .upload-shell {
+  background: var(--theme-surface);
+  border-color: var(--feature-border);
+}
+
+.profile-page .avatar-placeholder,
+.profile-page .avatar-preview.placeholder {
+  background: linear-gradient(135deg, var(--theme-main) 0%, var(--theme-deep) 100%);
+}
+
+.profile-page .avatar-action {
+  border-color: var(--feature-border);
+  color: var(--feature-primary-deep);
+}
+
+.profile-page .profile-page :deep(.el-input__wrapper),
+.profile-page :deep(.el-input__wrapper) {
+  background: var(--theme-surface);
+  border-color: var(--feature-border);
+}
+
+.profile-page .dialog-header {
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--feature-soft-bg) 88%, #ffffff 12%), transparent 24%),
+    linear-gradient(145deg, color-mix(in srgb, var(--feature-soft-bg) 74%, #ffffff 26%) 0%, #ffffff 64%);
+}
+</style>
+<style scoped>
+.profile-page {
   --theme-deep: #e8909d;
   --theme-border: rgba(245, 183, 192, 0.16);
   --theme-shadow: rgba(94, 52, 62, 0.08);

@@ -1,22 +1,12 @@
 <template>
-  <div class="notice-page">
-    <!-- 页面标题区域 -->
-    <div class="page-header">
-      <div class="header-decoration"></div>
-      <div class="header-content">
-        <h1 class="page-title">
-          <div class="title-icon">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M9.5 2.5A3.5 3.5 0 0 1 13 6a1 1 0 0 0 0 2 3.5 3.5 0 0 1-3.5 3.5H7a4 4 0 0 1-4-4 1 1 0 0 0-2 0 6 6 0 0 0 6 6h2.5A5.5 5.5 0 0 0 15 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          系统通知
-        </h1>
-        <p class="page-subtitle">查看系统公告和重要通知</p>
+  <div class="page-shell notice-page">
+    <section class="page-hero">
+      <div class="hero-copy">
+        <span class="hero-kicker">通知中心</span>
+        <h1>系统通知</h1>
+        <p>查看系统公告、重要提醒和近期发布内容，让通知页与用户端其他页面保持同一套头部语言。</p>
       </div>
-    </div>
+    </section>
 
     <section class="summary-grid">
       <article class="summary-card">
@@ -929,6 +919,66 @@ const handleViewDetail = (notice) => {
 .notice-page .detail-btn:hover {
   background: linear-gradient(135deg, #f5b7c0 0%, #e8909d 100%);
   border-color: transparent;
+}
+</style>
+<style scoped>
+.notice-page {
+  --theme-main: color-mix(in srgb, var(--feature-primary) 54%, #b58b61 46%);
+  --theme-deep: color-mix(in srgb, var(--feature-primary-deep) 78%, #6f5337 22%);
+  --theme-soft: color-mix(in srgb, var(--feature-soft-bg) 82%, #fff7ef 18%);
+  --theme-border: var(--feature-border);
+  --theme-shadow: color-mix(in srgb, var(--feature-primary) 12%, transparent);
+}
+
+.notice-page .page-hero {
+  padding: 30px;
+}
+
+.notice-page .hero-kicker {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--feature-chip-bg);
+  color: var(--feature-primary-deep);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.notice-page .hero-copy h1 {
+  margin: 16px 0 12px;
+  font-size: 36px;
+  color: var(--feature-strong);
+}
+
+.notice-page .hero-copy p {
+  margin: 0;
+  color: color-mix(in srgb, var(--feature-strong) 62%, #7f9084 38%);
+  line-height: 1.8;
+}
+
+.notice-page .detail-btn {
+  color: var(--feature-primary-deep) !important;
+  border-color: var(--feature-border) !important;
+  background: color-mix(in srgb, var(--feature-soft-bg) 70%, #fffaf4 30%) !important;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--feature-primary) 10%, transparent) !important;
+}
+
+.notice-page .detail-btn:hover {
+  background: color-mix(in srgb, var(--feature-soft-bg) 88%, #f4ebe0 12%) !important;
+  color: var(--feature-primary-deep) !important;
+  border-color: color-mix(in srgb, var(--feature-primary) 26%, #d6c4ae 74%) !important;
+  box-shadow: 0 12px 22px color-mix(in srgb, var(--feature-primary) 14%, transparent) !important;
+}
+
+@media (max-width: 768px) {
+  .notice-page .page-hero {
+    padding: 18px;
+  }
+
+  .notice-page .hero-copy h1 {
+    font-size: 28px;
+  }
 }
 </style>
 <style scoped>
