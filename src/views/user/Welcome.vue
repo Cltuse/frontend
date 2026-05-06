@@ -28,7 +28,23 @@
           <el-button class="refresh-btn" :loading="loading" @click="fetchWeather">刷新天气</el-button>
         </div>
 
-        <div class="weather-layout">
+        <div v-if="!weatherReady" class="weather-loading">
+          <div class="weather-loading-visual">
+            <span class="weather-loading-icon"></span>
+            <span class="weather-loading-temp"></span>
+            <span class="weather-loading-type"></span>
+          </div>
+
+          <div class="weather-loading-content">
+            <span class="weather-loading-row"></span>
+            <span class="weather-loading-row"></span>
+            <span class="weather-loading-row weather-loading-row--wide"></span>
+            <span class="weather-loading-row"></span>
+            <span class="weather-loading-quote"></span>
+          </div>
+        </div>
+
+        <div v-else class="weather-layout">
           <div class="weather-visual">
             <img
               v-if="isRenderableWeatherImage"
@@ -107,7 +123,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { weatherAPI } from '../../api/weather';
 import RecommendWidget from '../../components/RecommendWidget.vue';
@@ -115,6 +131,7 @@ import RecommendWidget from '../../components/RecommendWidget.vue';
 const router = useRouter();
 const currentUser = ref(null);
 const loading = ref(false);
+const weatherReady = ref(false);
 const weatherIconBroken = ref(false);
 
 const weatherInfo = ref({
@@ -127,6 +144,14 @@ const weatherInfo = ref({
   regionAddress: '',
   updateTime: ''
 });
+
+const MAX_AUTO_WEATHER_RETRIES = 2;
+const WEATHER_RETRY_DELAY = 1200;
+const MIN_INITIAL_WEATHER_DELAY = 700;
+
+let weatherRequestId = 0;
+let weatherRetryTimer = null;
+let weatherBootStartedAt = 0;
 
 const quickActions = [
   {
@@ -215,7 +240,55 @@ const goTo = (path) => {
   router.push(path);
 };
 
-const applyWeatherData = (data) => {
+const hasLocationDetails = (data) => {
+  const ipAddress = typeof data?.ipAddress === 'string' ? data.ipAddress.trim() : '';
+  const regionAddress = typeof data?.regionAddress === 'string' ? data.regionAddress.trim() : '';
+  return Boolean(ipAddress && regionAddress);
+};
+
+const clearWeatherRetryTimer = () => {
+  if (weatherRetryTimer) {
+    window.clearTimeout(weatherRetryTimer);
+    weatherRetryTimer = null;
+  }
+};
+
+const wait = (duration) => new Promise((resolve) => {
+  window.setTimeout(resolve, duration);
+});
+
+const revealInitialWeather = async (requestId) => {
+  if (weatherReady.value) {
+    return;
+  }
+
+  const elapsed = Date.now() - weatherBootStartedAt;
+  const remaining = MIN_INITIAL_WEATHER_DELAY - elapsed;
+  if (remaining > 0) {
+    await wait(remaining);
+  }
+
+  if (requestId === weatherRequestId) {
+    weatherReady.value = true;
+  }
+};
+
+const scheduleWeatherRetry = (retryCount) => {
+  if (retryCount > MAX_AUTO_WEATHER_RETRIES || weatherRetryTimer) {
+    return;
+  }
+
+  weatherRetryTimer = window.setTimeout(() => {
+    weatherRetryTimer = null;
+    fetchWeather({ background: true, retryCount, autoOnly: true });
+  }, WEATHER_RETRY_DELAY * retryCount);
+};
+
+const applyWeatherData = (data, options = {}) => {
+  const preserveLocation = options.preserveLocation ?? false;
+  const currentLocation = preserveLocation ? weatherInfo.value : null;
+  const currentWeather = weatherInfo.value;
+
   weatherIconBroken.value = false;
   weatherInfo.value = {
     weatherType: data?.weatherType || '晴',
@@ -223,13 +296,13 @@ const applyWeatherData = (data) => {
     weatherIcon: data?.weatherIcon || '☀',
     moodQuote: data?.moodQuote || '愿你今天的学习和预约都顺顺利利。',
     city: data?.city || '北京',
-    ipAddress: data?.ipAddress || '',
-    regionAddress: data?.regionAddress || '',
+    ipAddress: data?.ipAddress || currentLocation?.ipAddress || '',
+    regionAddress: data?.regionAddress || currentLocation?.regionAddress || '',
     updateTime: data?.updateTime || new Date().toLocaleString('zh-CN', { hour12: false })
   };
 };
 
-const fetchWeather = async () => {
+const fetchWeatherLegacy = async () => {
   loading.value = true;
   try {
     const autoResponse = await weatherAPI.getAutoWeather();
@@ -266,13 +339,102 @@ const fetchWeather = async () => {
   loading.value = false;
 };
 
+const fetchAutoWeather = async (requestId, retryCount) => {
+  try {
+    const autoResponse = await weatherAPI.getAutoWeather();
+    if (requestId !== weatherRequestId) {
+      return false;
+    }
+
+    const weatherData = autoResponse.data?.data;
+    if (!weatherData) {
+      return false;
+    }
+
+    applyWeatherData(weatherData, { preserveLocation: true });
+    if (!hasLocationDetails(weatherData)) {
+      scheduleWeatherRetry(retryCount + 1);
+    }
+    return true;
+  } catch (error) {
+    console.error('Auto weather fetch failed:', error);
+    return false;
+  }
+};
+
+const fetchWeather = async (options = {}) => {
+  const { background = false, retryCount = 0, autoOnly = false } = options;
+  const requestId = ++weatherRequestId;
+
+  clearWeatherRetryTimer();
+
+  if (!background) {
+    loading.value = true;
+  }
+
+  const autoLoaded = await fetchAutoWeather(requestId, retryCount);
+  if (autoLoaded) {
+    if (!background) {
+      await revealInitialWeather(requestId);
+    }
+    if (!background && requestId === weatherRequestId) {
+      loading.value = false;
+    }
+    return;
+  }
+
+  if (autoOnly) {
+    if (!background) {
+      await revealInitialWeather(requestId);
+    }
+    if (!background && requestId === weatherRequestId) {
+      loading.value = false;
+    }
+    return;
+  }
+
+  try {
+    const fallbackResponse = await weatherAPI.getWeather('北京');
+    if (requestId === weatherRequestId && fallbackResponse.data?.data) {
+      applyWeatherData(fallbackResponse.data.data, { preserveLocation: true });
+      scheduleWeatherRetry(retryCount + 1);
+      if (!background) {
+        await revealInitialWeather(requestId);
+      }
+      return;
+    }
+  } catch (error) {
+    console.error('Fallback weather fetch failed:', error);
+  } finally {
+    if (!background && requestId === weatherRequestId) {
+      loading.value = false;
+    }
+  }
+
+  if (requestId === weatherRequestId) {
+    applyWeatherData({
+      updateTime: new Date().toLocaleString('zh-CN', { hour12: false })
+    }, { preserveLocation: true });
+    scheduleWeatherRetry(retryCount + 1);
+    if (!background) {
+      await revealInitialWeather(requestId);
+    }
+  }
+};
+
 const handleWeatherIconError = () => {
   weatherIconBroken.value = true;
 };
 
 onMounted(() => {
   initUserInfo();
+  weatherBootStartedAt = Date.now();
   fetchWeather();
+});
+
+onBeforeUnmount(() => {
+  weatherRequestId += 1;
+  clearWeatherRetryTimer();
 });
 </script>
 
@@ -357,7 +519,7 @@ onMounted(() => {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 
@@ -399,6 +561,87 @@ onMounted(() => {
   grid-template-columns: 220px minmax(0, 1fr);
   gap: 18px;
   align-items: center;
+}
+
+.weather-loading {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.weather-loading-visual,
+.weather-loading-content {
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-loading-visual::before,
+.weather-loading-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  transform: translateX(-100%);
+  animation: weather-shimmer 1.4s ease-in-out infinite;
+}
+
+.weather-loading-visual {
+  padding: 22px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(245, 183, 192, 0.16);
+  min-height: 240px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 14px;
+}
+
+.weather-loading-content {
+  display: grid;
+  gap: 12px;
+}
+
+.weather-loading-icon,
+.weather-loading-temp,
+.weather-loading-type,
+.weather-loading-row,
+.weather-loading-quote {
+  display: block;
+  background: linear-gradient(135deg, rgba(245, 183, 192, 0.18), rgba(240, 224, 206, 0.42));
+}
+
+.weather-loading-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+}
+
+.weather-loading-temp {
+  width: 96px;
+  height: 34px;
+  border-radius: 14px;
+}
+
+.weather-loading-type {
+  width: 72px;
+  height: 18px;
+  border-radius: 999px;
+}
+
+.weather-loading-row {
+  height: 52px;
+  border-radius: 18px;
+}
+
+.weather-loading-row--wide {
+  height: 72px;
+}
+
+.weather-loading-quote {
+  height: 90px;
+  border-radius: 20px;
 }
 
 .weather-visual {
@@ -476,12 +719,6 @@ onMounted(() => {
   line-height: 1.8;
 }
 
-.action-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
 .quick-action {
   appearance: none;
   width: 100%;
@@ -557,20 +794,31 @@ onMounted(() => {
   line-height: 1.6;
 }
 
+.action-card {
+  background:
+    radial-gradient(circle at top left, rgba(244, 228, 200, 0.38), transparent 24%),
+    linear-gradient(150deg, rgba(244, 228, 200, 0.14) 0%, #ffffff 68%);
+}
+
 .quick-action-arrow {
   color: #7a5a3b;
   font-size: 18px;
   font-weight: 700;
 }
 
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
 @media (max-width: 1200px) {
   .action-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 980px) {
-  .content-grid,
   .weather-layout {
     grid-template-columns: 1fr;
   }
@@ -591,6 +839,10 @@ onMounted(() => {
   .recommend-head,
   .hero-actions {
     flex-direction: column;
+  }
+
+  .action-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
@@ -642,6 +894,15 @@ onMounted(() => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes weather-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
   }
 }
 </style>

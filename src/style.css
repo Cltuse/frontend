@@ -126,11 +126,11 @@ textarea {
   color: var(--feature-primary-deep) !important;
 }
 
-.user-layout :is(.page-title, .hero-copy h1, .summary-card strong, .stat-card strong, .card-title, .detail-copy h2, .table-head h2, .dialog-header h3, .empty-state h3, .detail-info-card strong, .timeline-content p, .panel-head h2, .section-copy h2, .facility-name, .card-head h2, .recommend-head h2, .quick-action-copy strong, .weather-visual strong, .notice-title, .feedback-title, .reply-head strong, .dialog-title-text, .empty-title, .info-value, .card-copy h2) {
+.user-layout :is(.page-title, .hero-copy h1, .summary-card strong, .stat-card strong, .card-title, .detail-copy h2, .table-head h2, .dialog-header h3, .empty-state h3, .detail-info-card strong, .timeline-content p, .panel-head h2, .section-copy h2, .section-head h2, .control-copy h2, .facility-name, .card-head h2, .recommend-head h2, .quick-action-copy strong, .weather-visual strong, .notice-title, .feedback-title, .reply-head strong, .dialog-title-text, .empty-title, .info-value, .card-copy h2, .toolbar-copy h2) {
   color: var(--feature-strong) !important;
 }
 
-.user-layout :is(.hero-copy p, .page-subtitle, .summary-label, .summary-card p, .stat-label, .stat-card p, .card-desc, .card-meta, .detail-copy p, .detail-label, .table-head p, .empty-state p, .timeline-content span, .meta-muted, .panel-head p, .description-text, .time-text, .card-head p, .recommend-head p, .quick-action-copy p, .quick-action-arrow, .weather-type, .weather-row label, .weather-row span, .weather-quote, .notice-meta, .content-text, .content-text-full, .empty-description, .info-label, .feedback-time, .feedback-content, .meta-list, .reply-box p, .reply-head span, .reply-user, .upload-copy p, .security-item p, .card-copy p, .page-subtitle, .page-header p) {
+.user-layout :is(.hero-copy p, .page-subtitle, .summary-label, .summary-card p, .stat-label, .stat-card p, .card-desc, .card-meta, .detail-copy p, .detail-label, .table-head p, .empty-state p, .timeline-content span, .meta-muted, .panel-head p, .section-head p, .control-copy p, .toolbar-copy p, .description-text, .time-text, .card-head p, .recommend-head p, .quick-action-copy p, .quick-action-arrow, .weather-type, .weather-row label, .weather-row span, .weather-row-value, .weather-quote, .notice-meta, .content-text, .content-text-full, .empty-description, .info-label, .feedback-time, .feedback-content, .meta-list, .reply-box p, .reply-head span, .reply-user, .upload-copy p, .security-item p, .card-copy p, .page-subtitle, .page-header p, .rule-empty, .rule-loading, .hero-empty p, .loading-card p, .detail-description, .description-box p, .panel-meta small) {
   color: color-mix(in srgb, var(--feature-strong) 62%, #7f9084 38%) !important;
 }
 
@@ -175,6 +175,18 @@ textarea {
 
 .user-layout :is(.weather-visual, .weather-row, .reply-box, .content-text-full, .upload-shell, .detail-panel, .detail-info-card, .notice-info) {
   background: color-mix(in srgb, var(--feature-soft-bg) 80%, #ffffff 20%) !important;
+}
+
+.user-layout :is(.page-shell, .welcome-page, .feedback-page, .profile-page, .violation-page, .notice-page, .facility-detail-page) {
+  gap: 16px !important;
+}
+
+.user-layout :is(.page-header, .page-hero, .welcome-hero, .feature-card, .recommend-shell, .panel-card, .summary-card, .notice-item, .feedback-card, .empty-state, .pagination-container, .table-container, .toolbar, .toolbar-card, .detail-panel, .detail-info-card, .timeline-content, .notice-info, .content-text-full, .upload-shell, .reply-box, .hero-card, .loading-card, .empty-card, .table-card, .weather-card, .action-card) {
+  padding: clamp(16px, 1.4vw, 22px) !important;
+}
+
+.user-layout :is(.summary-grid, .content-grid, .cards-grid, .action-grid, .panel-head, .card-head, .header-content, .hero-actions, .weather-layout, .weather-content, .drawer-actions, .timeline-list, .detail-layout, .info-grid, .info-list, .control-row, .table-head) {
+  gap: clamp(10px, 1vw, 16px) !important;
 }
 
 .user-layout :is(.title-icon, .notice-icon, .empty-icon, .quick-action-badge, .dialog-title-icon, .avatar-placeholder, .avatar-preview.placeholder) {

@@ -212,15 +212,35 @@ const handleLogout = () => {
   border-radius: 8px;
   background: linear-gradient(
     135deg,
-    #f8fafc 0%,
-    color-mix(in srgb, var(--feature-soft, rgba(64, 158, 255, 0.15)) 95%, #ffffff) 100%
+    color-mix(in srgb, var(--feature-soft, rgba(64, 158, 255, 0.15)) 62%, #ffffff) 0%,
+    color-mix(in srgb, var(--feature-primary, #409eff) 16%, #e8f1fb) 100%
   );
-  border: 1px solid color-mix(in srgb, var(--feature-primary, #409eff) 24%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--feature-primary, #409eff) 42%, #9aa8bb);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--feature-primary, #409eff);
+  color: color-mix(in srgb, var(--feature-primary, #409eff) 76%, #243447);
+  box-shadow: 0 8px 18px rgba(62, 92, 128, 0.16);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-trigger .el-icon {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.dropdown-trigger:hover,
+.dropdown-trigger:focus-visible {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--feature-soft, rgba(64, 158, 255, 0.15)) 72%, #ffffff) 0%,
+    color-mix(in srgb, var(--feature-primary, #409eff) 24%, #dbe8f8) 100%
+  );
+  border-color: color-mix(in srgb, var(--feature-primary, #409eff) 56%, #7b8ca3);
+  color: color-mix(in srgb, var(--feature-primary, #409eff) 82%, #1c2733);
+  box-shadow: 0 12px 24px rgba(62, 92, 128, 0.22);
+  transform: translateY(-1px);
 }
 
 .custom-dropdown-menu {

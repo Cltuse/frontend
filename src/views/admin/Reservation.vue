@@ -4,13 +4,12 @@
       <div class="hero-copy">
         <span class="hero-eyebrow">Reservation</span>
         <h1>预约记录管理</h1>
-        <p>管理系统内所有预约记录，包括预约状态、申请人、设施、时间等信息。</p>
-        
+        <p>统一查看、筛选和维护预约记录，也可以直接编辑未签到的待审核/已通过预约。</p>
       </div>
       <div class="hero-actions">
-          <el-button type="primary" class="primary-btn" @click="loadReservationList">刷新列表</el-button>
-          <el-button class="secondary-btn" @click="handleClearSearch">清空筛选</el-button>
-        </div>
+        <el-button type="primary" class="primary-btn" @click="loadReservationList">刷新列表</el-button>
+        <el-button class="secondary-btn" @click="handleClearSearch">清空筛选</el-button>
+      </div>
     </section>
 
     <section class="stats-grid">
@@ -22,7 +21,7 @@
       <article class="stat-card warning-card">
         <span class="stat-label">待审核</span>
         <strong>{{ stats.pending }}</strong>
-        <p>需要管理员处理的预约申请</p>
+        <p>等待管理员处理的预约申请</p>
       </article>
       <article class="stat-card success-card">
         <span class="stat-label">已通过</span>
@@ -32,18 +31,16 @@
       <article class="stat-card info-card">
         <span class="stat-label">已完成</span>
         <strong>{{ stats.completed }}</strong>
-        <p>已结束并归档的预约记录</p>
+        <p>已完成或归档的预约记录</p>
       </article>
     </section>
 
     <section class="control-card">
       <div class="section-copy">
-        <h2>筛选与视图切换</h2>
-        
-        <p>根据预约状态、设施名称或申请人筛选预约记录。</p>
-        
+        <h2>筛选与检索</h2>
+        <p>按预约状态、设施名称或申请人快速定位目标记录。</p>
       </div>
-      
+
       <el-tabs v-model="activeTab" class="status-tabs" @tab-change="handleTabChange">
         <el-tab-pane label="待审核" name="PENDING" />
         <el-tab-pane label="已通过" name="APPROVED" />
@@ -51,36 +48,33 @@
         <el-tab-pane label="已拒绝" name="REJECTED" />
         <el-tab-pane label="全部" name="ALL" />
       </el-tabs>
-      <div class="control-actions search-toolbar">
-        <div class="search-fields">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="搜索设施名称或申请人"
-            class="search-input"
-            clearable
-            @keyup.enter="handleSearch"
-            @clear="handleClearSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </div>
+
+      <div class="search-toolbar">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索设施名称或申请人"
+          class="search-input"
+          clearable
+          @keyup.enter="handleSearch"
+          @clear="handleClearSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
 
         <div class="search-buttons">
           <el-button type="primary" class="primary-btn small-btn" @click="handleSearch">搜索</el-button>
           <el-button class="secondary-btn small-btn" @click="handleClearSearch">重置</el-button>
         </div>
       </div>
-
-
     </section>
 
-    <section class="panel-card" :style="{ '--reservation-page-size': pagination.size }">
+    <section class="panel-card">
       <div class="panel-head">
         <div class="section-copy">
           <h2>预约记录列表</h2>
-          <p>点击任意记录可查看完整预约信息、签到状态、核销码与审核备注。</p>
+          <p>支持查看详情与编辑预约时间、用途和备注。</p>
         </div>
         <div class="panel-meta">
           <span class="meta-chip">共 {{ total }} 条</span>
@@ -99,7 +93,7 @@
         <el-table-column prop="userName" label="申请人" min-width="120" />
         <el-table-column prop="startTime" label="开始时间" min-width="170" />
         <el-table-column prop="endTime" label="结束时间" min-width="170" />
-        <el-table-column prop="purpose" label="使用用途" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="purpose" label="使用用途" min-width="200" show-overflow-tooltip />
         <el-table-column prop="verificationCode" label="核销码" width="120" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.verificationCode" type="info" effect="plain" round>{{ row.verificationCode }}</el-tag>
@@ -120,11 +114,16 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" align="center" fixed="right">
+        <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" plain class="view-btn" @click.stop="handleRowClick(row)">
-              查看
-            </el-button>
+            <div class="table-actions">
+              <el-button size="small" type="primary" plain class="view-btn" @click.stop="handleRowClick(row)">
+                查看
+              </el-button>
+              <el-button size="small" plain class="edit-btn" @click.stop="handleEdit(row)">
+                编辑
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -213,7 +212,84 @@
 
       <template #footer>
         <div class="dialog-footer">
+          <el-button type="primary" plain class="view-btn" @click="handleEdit(currentRow)">编辑预约</el-button>
           <el-button class="secondary-btn" @click="detailDialogVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="editDialogVisible" width="680px" class="detail-dialog" :show-close="false">
+      <template #header>
+        <div class="dialog-header">
+          <div class="dialog-badge">
+            <el-icon><Document /></el-icon>
+          </div>
+          <div>
+            <h3>编辑预约</h3>
+            <p>{{ editForm.facilityName || '预约记录' }}</p>
+          </div>
+        </div>
+      </template>
+
+      <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-position="top" class="edit-form">
+        <div class="edit-form-grid">
+          <el-form-item label="设施名称">
+            <el-input :model-value="editForm.facilityName" disabled />
+          </el-form-item>
+          <el-form-item label="申请人">
+            <el-input :model-value="editForm.userName" disabled />
+          </el-form-item>
+          <el-form-item label="开始时间" prop="startTime">
+            <el-date-picker
+              v-model="editForm.startTime"
+              type="datetime"
+              placeholder="选择开始时间"
+              style="width: 100%"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              format="YYYY-MM-DD HH:mm"
+            />
+          </el-form-item>
+          <el-form-item label="结束时间" prop="endTime">
+            <el-date-picker
+              v-model="editForm.endTime"
+              type="datetime"
+              placeholder="选择结束时间"
+              style="width: 100%"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              format="YYYY-MM-DD HH:mm"
+            />
+          </el-form-item>
+        </div>
+
+        <el-form-item label="使用用途" prop="purpose">
+          <el-input
+            v-model="editForm.purpose"
+            type="textarea"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+            placeholder="请输入预约用途"
+          />
+        </el-form-item>
+
+        <el-form-item label="管理员备注" prop="adminRemark">
+          <el-input
+            v-model="editForm.adminRemark"
+            type="textarea"
+            :rows="3"
+            maxlength="300"
+            show-word-limit
+            placeholder="可选：记录编辑原因或补充说明"
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button class="secondary-btn" @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" class="primary-btn" :loading="savingEdit" @click="handleSaveEdit">
+            保存修改
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -232,6 +308,7 @@ const themeVars = computed(() => ({
 }));
 
 const loading = ref(false);
+const savingEdit = ref(false);
 const activeTab = ref('PENDING');
 const searchKeyword = ref('');
 const isSearchMode = ref(false);
@@ -239,11 +316,60 @@ const reservationList = ref([]);
 const allReservations = ref([]);
 const total = ref(0);
 const detailDialogVisible = ref(false);
+const editDialogVisible = ref(false);
 const currentRow = ref(null);
+const editFormRef = ref(null);
+
 const pagination = ref({
   page: 1,
   size: 10
 });
+
+const editForm = ref({
+  id: null,
+  facilityName: '',
+  userName: '',
+  startTime: '',
+  endTime: '',
+  purpose: '',
+  adminRemark: ''
+});
+
+function validateEditStart(rule, value, callback) {
+  if (!value) {
+    callback(new Error('请选择开始时间'));
+    return;
+  }
+  if (new Date(value) < new Date()) {
+    callback(new Error('开始时间不能早于当前时间'));
+    return;
+  }
+  callback();
+}
+
+function validateEditEnd(rule, value, callback) {
+  if (!value) {
+    callback(new Error('请选择结束时间'));
+    return;
+  }
+  if (editForm.value.startTime && new Date(value) <= new Date(editForm.value.startTime)) {
+    callback(new Error('结束时间必须晚于开始时间'));
+    return;
+  }
+  callback();
+}
+
+const editRules = {
+  startTime: [
+    { required: true, message: '请选择开始时间', trigger: 'change' },
+    { validator: validateEditStart, trigger: 'change' }
+  ],
+  endTime: [
+    { required: true, message: '请选择结束时间', trigger: 'change' },
+    { validator: validateEditEnd, trigger: 'change' }
+  ],
+  purpose: [{ required: true, message: '请输入预约用途', trigger: 'blur' }]
+};
 
 const stats = computed(() => ({
   total: allReservations.value.length,
@@ -252,26 +378,11 @@ const stats = computed(() => ({
   completed: allReservations.value.filter((item) => item.status === 'COMPLETED').length
 }));
 
-const pendingCheckins = computed(() =>
-  allReservations.value.filter((item) => item.status === 'APPROVED' && item.checkinStatus === 'NOT_CHECKED').length
-);
-
-const currentTabLabel = computed(
-  () =>
-    ({
-      PENDING: '当前为待审核视图',
-      APPROVED: '当前为已通过视图',
-      COMPLETED: '当前为已完成视图',
-      REJECTED: '当前为已拒绝视图',
-      ALL: '当前为全部预约视图'
-    })[activeTab.value] || '当前预约视图'
-);
-
 onMounted(() => {
   loadReservationList();
 });
 
-const loadReservationList = async () => {
+async function loadReservationList() {
   try {
     loading.value = true;
     const res = await reservationAPI.list();
@@ -302,41 +413,93 @@ const loadReservationList = async () => {
   } finally {
     loading.value = false;
   }
-};
+}
 
-const handleTabChange = () => {
+function handleTabChange() {
   pagination.value.page = 1;
   loadReservationList();
-};
+}
 
-const handleSearch = () => {
+function handleSearch() {
   pagination.value.page = 1;
   isSearchMode.value = Boolean(searchKeyword.value.trim());
   loadReservationList();
-};
+}
 
-const handleClearSearch = () => {
+function handleClearSearch() {
   searchKeyword.value = '';
   isSearchMode.value = false;
   pagination.value.page = 1;
   loadReservationList();
-};
+}
 
-const handleSizeChange = (size) => {
+function handleSizeChange(size) {
   pagination.value.size = size;
   pagination.value.page = 1;
   loadReservationList();
-};
+}
 
-const handleCurrentChange = (page) => {
+function handleCurrentChange(page) {
   pagination.value.page = page;
   loadReservationList();
-};
+}
 
-const handleRowClick = (row) => {
+function handleRowClick(row) {
   currentRow.value = row;
   detailDialogVisible.value = true;
-};
+}
+
+function handleEdit(row) {
+  if (!row) {
+    return;
+  }
+
+  editForm.value = {
+    id: row.id,
+    facilityName: row.facilityName || '',
+    userName: row.userName || '',
+    startTime: row.startTime || '',
+    endTime: row.endTime || '',
+    purpose: row.purpose || '',
+    adminRemark: row.adminRemark || ''
+  };
+  editDialogVisible.value = true;
+  editFormRef.value?.clearValidate();
+}
+
+async function handleSaveEdit() {
+  try {
+    await editFormRef.value?.validate();
+    savingEdit.value = true;
+
+    const payload = {
+      startTime: editForm.value.startTime,
+      endTime: editForm.value.endTime,
+      purpose: editForm.value.purpose,
+      adminRemark: editForm.value.adminRemark
+    };
+
+    const res = await reservationAPI.update(editForm.value.id, payload);
+    const updatedRow = res.data || { ...payload, id: editForm.value.id };
+
+    ElMessage.success(res.message || '预约更新成功');
+    editDialogVisible.value = false;
+
+    if (currentRow.value?.id === editForm.value.id) {
+      currentRow.value = {
+        ...currentRow.value,
+        ...updatedRow
+      };
+    }
+
+    await loadReservationList();
+  } catch (error) {
+    console.error('更新预约失败:', error);
+    ElMessage.error(error.response?.data?.message || error.message || '更新预约失败');
+  } finally {
+    savingEdit.value = false;
+  }
+}
 
 const getStatusType = (status) =>
   ({
@@ -369,17 +532,12 @@ const getCheckinStatusText = (status) =>
     NOT_CHECKED: '未签到',
     CHECKED_IN: '已签到',
     CHECKED_OUT: '已签退',
-    MISSED: '失约'
+    MISSED: '爽约'
   })[status] || status;
 </script>
 
 <style scoped>
 .admin-reservation-page {
-  --theme-main: var(--feature-primary);
-  --theme-deep: var(--feature-strong);
-  --theme-soft: var(--feature-soft);
-  --theme-border: var(--feature-border);
-  --theme-shadow: var(--feature-glow);
   min-height: 100%;
   display: grid;
   gap: 20px;
@@ -392,130 +550,79 @@ const getCheckinStatusText = (status) =>
 .page-hero,
 .stat-card,
 .control-card,
-.panel-card {
-  animation: reservation-rise 0.55s ease both;
+.panel-card,
+.detail-panel,
+.detail-summary-card {
+  border-radius: 28px;
+  border: 1px solid var(--feature-border);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 22px 50px var(--feature-glow);
 }
 
 .page-hero,
 .control-card,
-.panel-card,
-.hero-note,
-.detail-panel,
-.detail-summary-card {
-  border-radius: 28px;
-  border: 1px solid var(--theme-border);
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 22px 50px var(--theme-shadow);
+.panel-card {
+  padding: 28px;
 }
 
 .page-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) 320px;
-  align-items: start;
+  display: flex;
+  justify-content: space-between;
   gap: 20px;
-  padding: 30px;
-  min-height: 206px;
-  background:
-    radial-gradient(circle at top right, var(--theme-soft), transparent 30%),
-    linear-gradient(145deg, rgba(240, 249, 252, 0.98) 0%, #ffffff 62%);
+  align-items: flex-start;
 }
 
 .hero-eyebrow {
   display: inline-flex;
-  align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(200, 216, 240, 0.24);
-  color: #4b6f99;
+  background: var(--feature-soft);
+  color: var(--feature-strong);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .hero-copy h1,
-.section-copy h2,
-.dialog-header h3 {
+.section-copy h2 {
   margin: 14px 0 10px;
-  color: #17314d;
-}
-
-.hero-copy h1 {
-  font-size: 34px;
+  color: #23344d;
 }
 
 .hero-copy p,
 .section-copy p,
-.dialog-header p {
+.stat-card p {
   margin: 0;
-  color: #67778f;
-  line-height: 1.8;
+  color: #667892;
+  line-height: 1.7;
 }
 
 .hero-actions,
-.control-actions,
-.panel-meta,
-.dialog-footer {
+.search-buttons,
+.dialog-footer,
+.table-actions {
   display: flex;
+  gap: 10px;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.hero-actions {
-  margin-top: 24px;
-  justify-content: flex-end;
-  align-self: start;
-  min-height: 44px;
 }
 
 .primary-btn,
-.secondary-btn {
-  min-height: 44px;
-  padding: 0 18px;
+.secondary-btn,
+.small-btn,
+.view-btn,
+.edit-btn {
   border-radius: 14px;
+  font-weight: 600;
 }
 
 .primary-btn {
-  border: none;
-  background: linear-gradient(135deg, var(--feature-primary) 0%, var(--feature-strong) 100%);
-  box-shadow: 0 14px 28px rgba(63, 134, 146, 0.22);
+  min-height: 44px;
 }
 
 .secondary-btn {
+  min-height: 44px;
   border: 1px solid var(--feature-border);
-  background: rgba(255, 255, 255, 0.9);
-  color: #5b7a96;
-}
-
-.hero-side {
-  display: grid;
-  gap: 14px;
-}
-
-.hero-note {
-  min-height: 132px;
-  padding: 22px;
-  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-}
-
-.hero-note span,
-.hero-note small,
-.stat-label,
-.stat-card p,
-.detail-summary-card span {
-  color: #72839b;
-}
-
-.hero-note strong,
-.stat-card strong,
-.detail-summary-card strong {
-  color: #19324e;
-}
-
-.hero-note strong {
-  display: block;
-  margin: 14px 0 8px;
-  font-size: 30px;
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .stats-grid {
@@ -525,187 +632,113 @@ const getCheckinStatusText = (status) =>
 }
 
 .stat-card {
-  padding: 22px;
-  border-radius: 24px;
-  border: 1px solid var(--feature-border);
-  background: linear-gradient(150deg, rgba(240, 249, 252, 0.96) 0%, #ffffff 84%);
-  box-shadow: 0 18px 40px rgba(30, 41, 59, 0.06);
-}
-
-.warning-card {
-  background: linear-gradient(150deg, rgba(255, 247, 232, 0.96) 0%, #ffffff 84%);
-}
-
-.success-card {
-  background: linear-gradient(150deg, rgba(238, 251, 244, 0.96) 0%, #ffffff 84%);
-}
-
-.info-card {
-  background: linear-gradient(150deg, rgba(244, 247, 251, 0.96) 0%, #ffffff 84%);
+  padding: 22px 20px;
+  display: grid;
+  gap: 8px;
 }
 
 .stat-card strong {
-  display: block;
-  margin: 14px 0 8px;
-  font-size: 30px;
+  font-size: 34px;
+  color: #23344d;
 }
 
-.stat-card p {
-  margin: 0;
-  line-height: 1.65;
+.warning-card strong {
+  color: #d88b35;
 }
 
-.control-card,
-.panel-card {
-  padding: 24px;
+.success-card strong {
+  color: #4d9c73;
 }
 
-.panel-card {
-  display: flex;
-  flex-direction: column;
-  min-height: clamp(560px, calc(var(--reservation-page-size, 10) * 54px + 170px), 760px);
+.info-card strong {
+  color: #5486c7;
+}
+
+.stat-label,
+.meta-chip {
+  font-size: 13px;
+  font-weight: 600;
+  color: #70839f;
 }
 
 .status-tabs {
-  margin-top: 4px;
-}
-
-.status-tabs :deep(.el-tabs__header) {
-  margin: 0;
-}
-
-.status-tabs :deep(.el-tabs__nav-wrap::after) {
-  background: rgba(200, 216, 240, 0.12);
-}
-
-.status-tabs :deep(.el-tabs__item) {
-  height: 38px;
-  border-radius: 999px;
-  padding: 0 16px;
-  color: #6b7f9c;
-}
-
-.status-tabs :deep(.el-tabs__item.is-active) {
-  color: #4b6f99;
-}
-
-.status-tabs :deep(.el-tabs__active-bar) {
-  display: none;
-}
-
-.control-actions {
-  justify-content: flex-end;
   margin-top: 18px;
 }
 
-.search-input {
-  width: 420px;
+.search-toolbar {
+  margin-top: 18px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
 }
 
-.search-input :deep(.el-input__wrapper) {
-  min-height: 46px;
-  border-radius: 16px;
-  box-shadow: none;
-  border: 1px solid var(--feature-border);
-  background: #f9fbff;
+.search-input {
+  flex: 1;
 }
 
 .panel-head {
   display: flex;
   justify-content: space-between;
   gap: 16px;
+  align-items: flex-start;
   margin-bottom: 18px;
+}
+
+.panel-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .meta-chip {
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(200, 216, 240, 0.24);
-  color: #5579a4;
-  font-size: 12px;
-  font-weight: 600;
+  background: rgba(240, 245, 255, 0.92);
 }
 
 .muted-chip {
-  background: rgba(244, 249, 252, 0.96);
-  color: #72839b;
+  color: #8a9ab0;
 }
 
-.reservation-table :deep(.el-table) {
-  --el-table-border-color: rgba(132, 165, 205, 0.12);
-  --el-table-row-hover-bg-color: rgba(243, 250, 252, 0.95);
-  border-radius: 20px;
-}
-
-.reservation-table {
-  flex: 1;
-}
-
-.reservation-table :deep(.el-table__inner-wrapper) {
-  min-height: clamp(320px, calc(var(--reservation-page-size, 10) * 48px), 520px);
-}
-
-.reservation-table :deep(.el-table__empty-block) {
-  min-height: 220px;
-}
-
-.reservation-table :deep(.el-table__empty-text) {
-  color: #7a8ca4;
-}
-
-.reservation-table :deep(.el-table::before),
-.reservation-table :deep(.el-table__inner-wrapper::before) {
-  display: none;
-}
-
-.reservation-table :deep(.el-table__header-wrapper th.el-table__cell) {
-  background: linear-gradient(180deg, #f6fbfe 0%, #eef5fc 100%) !important;
-  color: #225368;
-}
-
-.view-btn {
-  border-radius: 999px;
-  color: #5579a4;
-  border-color: rgba(132, 165, 205, 0.24);
+.reservation-table :deep(.el-table__row) {
+  cursor: pointer;
 }
 
 .pagination-wrap {
+  margin-top: 18px;
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
-  min-height: 40px;
-  align-items: center;
-}
-
-.detail-dialog :deep(.el-dialog) {
-  border-radius: 28px;
-  overflow: hidden;
 }
 
 .dialog-header {
   display: flex;
-  align-items: center;
   gap: 14px;
-  padding: 26px 30px 18px;
-  background:
-    radial-gradient(circle at top right, rgba(200, 216, 240, 0.32), transparent 26%),
-    linear-gradient(145deg, rgba(240, 249, 252, 0.96) 0%, #ffffff 62%);
+  align-items: center;
+}
+
+.dialog-header h3 {
+  margin: 0 0 6px;
+  color: #23344d;
+}
+
+.dialog-header p {
+  margin: 0;
+  color: #70839f;
 }
 
 .dialog-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
-  width: 50px;
-  height: 50px;
-  border-radius: 16px;
-  background: rgba(200, 216, 240, 0.34);
+  background: var(--feature-soft);
   color: var(--feature-strong);
 }
 
 .detail-layout {
   display: grid;
   gap: 18px;
-  padding: 0 30px 18px;
 }
 
 .detail-summary-grid {
@@ -716,79 +749,62 @@ const getCheckinStatusText = (status) =>
 
 .detail-summary-card {
   padding: 18px;
-  box-shadow: none;
-  background: linear-gradient(150deg, rgba(240, 249, 252, 0.96) 0%, #ffffff 84%);
+  display: grid;
+  gap: 8px;
+}
+
+.detail-summary-card span {
+  color: #70839f;
+  font-size: 13px;
 }
 
 .detail-summary-card strong {
-  display: block;
-  margin-top: 10px;
-  font-size: 18px;
+  color: #23344d;
+  font-size: 20px;
 }
 
 .detail-panel {
-  padding: 8px;
+  padding: 18px;
 }
 
-.detail-panel :deep(.el-descriptions__label) {
-  color: #607697;
+.edit-form {
+  display: grid;
+  gap: 8px;
 }
 
-.dialog-footer {
-  justify-content: flex-end;
-  padding: 0 30px 30px;
+.edit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-@keyframes reservation-rise {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.edit-btn {
+  border-color: rgba(122, 153, 214, 0.35);
+  color: #4a74b6;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1100px) {
   .stats-grid,
   .detail-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .page-hero {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 768px) {
-  .stats-grid,
-  .detail-summary-grid {
-    grid-template-columns: 1fr;
-  }
-
   .page-hero,
-  .control-card,
-  .panel-card,
-  .dialog-header,
-  .detail-layout,
-  .dialog-footer {
-    padding-left: 18px;
-    padding-right: 18px;
-  }
-
-  .hero-copy h1 {
-    font-size: 28px;
-  }
-
-  .panel-head,
-  .dialog-footer {
+  .search-toolbar,
+  .panel-head {
     flex-direction: column;
-    align-items: stretch;
   }
 
-  .search-input {
-    width: 100%;
+  .stats-grid,
+  .detail-summary-grid,
+  .edit-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pagination-wrap {
+    justify-content: flex-start;
   }
 }
 </style>

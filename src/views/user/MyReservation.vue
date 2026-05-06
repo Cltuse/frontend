@@ -33,6 +33,10 @@
 
     <!-- 工具栏 -->
     <div class="toolbar">
+      <div class="toolbar-copy">
+        <h2>搜索预约</h2>
+        <p>按设施名称快速查找预约记录，减少在长列表里反复翻页。</p>
+      </div>
       <div class="search-container">
         <el-input
           v-model="searchFacilityName"
@@ -50,11 +54,18 @@
 
     <!-- 预约表格 -->
     <div class="table-container">
+      <div class="table-head">
+        <div>
+          <h2>预约记录列表</h2>
+          <p>查看每条预约的时间、用途、状态和签到进度，点击记录可展开详情。</p>
+        </div>
+      </div>
       <el-table
         :data="paginatedReservationList"
         class="reservation-table"
         :header-cell-style="headerCellStyle"
         :cell-style="cellStyle"
+        empty-text="暂无符合条件的预约记录"
         @row-click="handleRowClick"
       >
         <el-table-column prop="facilityName" label="设施名称" min-width="180">
@@ -742,6 +753,20 @@ const getCheckinStatusText = (checkinStatus) => {
 
 .toolbar {
   padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.toolbar-copy h2,
+.table-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.toolbar-copy p,
+.table-head p {
+  margin: 8px 0 0;
+  line-height: 1.7;
 }
 
 .search-input {
@@ -763,6 +788,10 @@ const getCheckinStatusText = (checkinStatus) => {
 .table-container {
   padding: 8px;
   overflow: hidden;
+}
+
+.table-head {
+  padding: 12px 16px 6px;
 }
 
 .reservation-table {
