@@ -1,17 +1,23 @@
 <template>
-  <div class="page-shell facility-theme">
+  <div class="page-shell facility-theme" :style="featureVars">
     <section class="page-hero">
       <div class="hero-copy">
         <span class="eyebrow">Facility Management</span>
         <h1>设施管理</h1>
-        <p>管理本人负责场地的状态、预约安排和维护入口，详情页同步展示未来排期。</p>
+        <p>
+          管理所有设施，包括新增、删除、更新和查询。
+        </p>
       </div>
-
+      <div class="hero-badge">
+        <span>当前负责</span>
+        <strong>{{ stats.total }}</strong>
+        <small>个设施</small>
+      </div>
     </section>
 
     <section class="summary-grid">
       <article class="summary-card">
-        <span class="summary-label">总场地数</span>
+        <span class="summary-label">设施总数</span>
         <strong>{{ stats.total }}</strong>
       </article>
       <article class="summary-card">
@@ -23,21 +29,21 @@
         <strong>{{ stats.maintenance }}</strong>
       </article>
       <article class="summary-card">
-        <span class="summary-label">损坏待处理</span>
+        <span class="summary-label">停用或损坏</span>
         <strong>{{ stats.damaged }}</strong>
       </article>
     </section>
 
     <section class="control-card">
       <div class="control-copy">
-        <h2>场地列表</h2>
-        <p>同类管理页统一采用概览卡片 + 操作区 + 数据表格的布局。</p>
+        <h2>设施列表</h2>
+        <p>支持按名称、型号和分类快速检索，点击详情可查看基础信息与近期预约明细。</p>
       </div>
 
       <div class="control-actions">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索场地名称、型号或分类"
+          placeholder="搜索设施名称、型号或分类"
           clearable
           class="search-input"
           @keyup.enter="handleSearch"
@@ -47,43 +53,53 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button type="success" @click="openCreateDialog">新建场地</el-button>
+        <el-button class="action-btn search-btn" type="primary" @click="handleSearch">
+          搜索
+        </el-button>
+        <el-button class="action-btn create-btn" type="success" @click="openCreateDialog">
+          新建设施
+        </el-button>
       </div>
     </section>
 
     <section class="panel-card">
+      <div class="panel-header">
+        <div>
+          <h2>设施清单</h2>
+          <p>当前共 {{ pagination.total }} 条结果，可直接查看详情或删除记录。</p>
+        </div>
+      </div>
+
       <el-table
         ref="tableRef"
+        v-loading="loading"
         :data="paginatedFacilities"
         stripe
         highlight-current-row
-        empty-text="暂无场地数据"
-        @sort-change="handleSortChange"
+        empty-text="暂无设施数据"
       >
-        <el-table-column label="设施" min-width="200">
+        <el-table-column label="设施" min-width="240">
           <template #default="{ row }">
             <div class="facility-cell">
               <div class="facility-thumb">
-                <img
-                  :src="getImageSrc(row.image)"
-                  :alt="row.name"
-                />
+                <img :src="getImageSrc(row.image)" :alt="row.name" />
               </div>
-              <div>
+              <div class="facility-copy">
                 <div class="facility-name">
-                  <el-link type="primary" :underline="false" @click="handleRowClick(row)">{{
-                    row.name
-                  }}</el-link>
+                  <el-link type="primary" :underline="false" @click="handleRowClick(row)">
+                    {{ row.name }}
+                  </el-link>
                 </div>
                 <div class="facility-meta">
-                  {{ row.model ? row.model + ' / ' : '' }}{{ row.categoryName || '-' }}
+                  {{ row.model ? `${row.model} / ` : '' }}{{ row.categoryName || '-' }}
                 </div>
               </div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="location" label="位置" width="150" />
+
+        <el-table-column prop="location" label="位置" min-width="150" show-overflow-tooltip />
+
         <el-table-column prop="status" label="状态" width="110" align="center">
           <template #default="{ row }">
             <el-tag :type="statusType(row.status)" size="small">
@@ -91,15 +107,32 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="260" align="center">
+
+        <el-table-column label="操作" width="220" align="center">
           <template #default="{ row }">
             <div class="row-actions">
-              <el-button size="small" type="primary" @click="handleRowClick(row)">详情</el-button>
-              <el-button size="small" :type="row.status === 'MAINTENANCE' ? 'warning' : 'default'" @click="handleEditStatus(row)">{{ row.status === 'MAINTENANCE' ? '恢复可用' : '开始维护' }}</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                class="row-btn detail-btn"
+                @click="handleRowClick(row)"
+              >
+                详情
+              </el-button>
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                class="row-btn delete-btn"
+                @click="handleDelete(row)"
+              >
+                删除
+              </el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
+
       <div class="pagination-wrap">
         <el-pagination
           v-model:current-page="pagination.current"
@@ -120,17 +153,16 @@
     >
       <div v-if="selectedFacility" class="detail-layout">
         <div class="detail-hero">
-          <img
-            :src="getImageSrc(selectedFacility.image)"
-            :alt="selectedFacility.name"
-          />
+          <img :src="getImageSrc(selectedFacility.image)" :alt="selectedFacility.name" />
           <div class="detail-hero-copy">
             <h2>{{ selectedFacility.name }}</h2>
             <p>{{ selectedFacility.description || '暂无描述' }}</p>
             <div class="detail-tags">
-              <el-tag size="small" effect="plain">{{ selectedFacility.categoryName }}</el-tag>
-              <el-tag size="small" effect="plain">{{ selectedFacility.location }}</el-tag>
-              <el-tag size="small" :type="statusType(selectedFacility.status)">{{ statusLabel(selectedFacility.status) }}</el-tag>
+              <el-tag size="small" effect="plain">{{ selectedFacility.categoryName || '-' }}</el-tag>
+              <el-tag size="small" effect="plain">{{ selectedFacility.location || '-' }}</el-tag>
+              <el-tag size="small" :type="statusType(selectedFacility.status)">
+                {{ statusLabel(selectedFacility.status) }}
+              </el-tag>
             </div>
           </div>
         </div>
@@ -141,46 +173,55 @@
             <strong>{{ selectedFacility.model || '-' }}</strong>
           </div>
           <div class="detail-info-card">
-            <span class="detail-label">采购时间</span>
+            <span class="detail-label">购置时间</span>
             <strong>{{ formatDate(selectedFacility.purchaseDate) }}</strong>
-          </div>          
+          </div>
           <div class="detail-info-card">
             <span class="detail-label">价格</span>
             <strong>{{ formatPrice(selectedFacility.price) }}</strong>
+          </div>
+          <div class="detail-info-card">
+            <span class="detail-label">负责人</span>
+            <strong>{{ selectedFacility.maintainerName || '当前账号' }}</strong>
           </div>
         </div>
 
         <div class="timeline-panel">
           <div class="section-title">
-            <h3>📋 未来排期（{{ facilityTimeline.length }} 条）</h3>
-            <span>按时间正序排列</span>
+            <h3>近期预约明细</h3>
+            <span>未来 30 天共 {{ facilityTimeline.length }} 条</span>
           </div>
-          <div v-if="facilityTimeline.length" class="timeline-list">
-            <div v-for="event in facilityTimeline" :key="event.id" class="timeline-item">
-              <div class="timeline-dot" />
-              <div class="timeline-content">
-                <div class="timeline-top">
-                  <el-tag size="small" effect="plain">{{ event.statusLabel || event.status }}</el-tag>
-                  <span>{{ formatRange(event.startTime, event.endTime) }}</span>
+
+          <div v-loading="timelineLoading">
+            <div v-if="facilityTimeline.length" class="timeline-list">
+              <div v-for="event in facilityTimeline" :key="event.id" class="timeline-item">
+                <div class="timeline-dot" />
+                <div class="timeline-content">
+                  <div class="timeline-top">
+                    <el-tag size="small" effect="plain">
+                      {{ reservationStatusLabel(event.status) }}
+                    </el-tag>
+                    <span>{{ formatRange(event.startTime, event.endTime) }}</span>
+                  </div>
+                  <p>{{ event.username || '未知用户' }} / {{ event.purpose || '无备注' }}</p>
+                  <span v-if="event.createdAt">预约时间：{{ formatDateTime(event.createdAt) }}</span>
                 </div>
-                <p>{{ event.username || '未知用户' }} · {{ event.purpose || '无备注' }}</p>
-                <span v-if="event.createdAt">预约时间: {{ formatDateTime(event.createdAt) }}</span>
               </div>
             </div>
+            <div v-else class="timeline-empty">当前暂无未来预约安排</div>
           </div>
-          <div v-else class="timeline-empty">当前暂无未来排期</div>
         </div>
       </div>
     </el-dialog>
 
-    <el-dialog v-model="createVisible" title="新建场地" width="560px" destroy-on-close>
+    <el-dialog v-model="createVisible" title="新建设施" width="560px" destroy-on-close>
       <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="100px">
         <el-form-item label="名称" prop="name">
-          <el-input v-model="createForm.name" placeholder="请输入场地名称" />
+          <el-input v-model="createForm.name" placeholder="请输入设施名称" />
         </el-form-item>
         <el-form-item label="分类" prop="categoryId">
-          <el-select v-model="createForm.categoryId" placeholder="请选择分类" style="width:100%">
-            <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
+          <el-select v-model="createForm.categoryId" placeholder="请选择分类" style="width: 100%">
+            <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="位置" prop="location">
@@ -192,14 +233,19 @@
         <el-form-item label="描述">
           <el-input v-model="createForm.description" type="textarea" :rows="3" placeholder="选填" />
         </el-form-item>
-        <el-form-item label="采购时间">
-          <el-date-picker v-model="createForm.purchaseDate" type="date" placeholder="选填" style="width:100%" />
+        <el-form-item label="购置时间">
+          <el-date-picker
+            v-model="createForm.purchaseDate"
+            type="date"
+            placeholder="选填"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="使用年限">
-          <el-input-number v-model="createForm.lifespan" :min="0" :max="100" placeholder="年" style="width:100%" />
+          <el-input-number v-model="createForm.lifespan" :min="0" :max="100" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="价格 (元)">
-          <el-input-number v-model="createForm.price" :min="0" :step="100" placeholder="选填" style="width:100%" />
+        <el-form-item label="价格(元)">
+          <el-input-number v-model="createForm.price" :min="0" :step="100" style="width: 100%" />
         </el-form-item>
         <el-form-item label="图片">
           <el-upload
@@ -208,7 +254,7 @@
             accept="image/*"
             @change="handleImageChange"
           >
-            <el-button size="small">选择图片</el-button>
+            <el-button size="small" class="upload-btn">选择图片</el-button>
             <template #tip>
               <span v-if="createForm.image" class="image-name">{{ createForm.image.name }}</span>
             </template>
@@ -220,57 +266,36 @@
         <el-button type="primary" :loading="createLoading" @click="handleCreate">确认新建</el-button>
       </template>
     </el-dialog>
-
-    <el-dialog v-model="statusDialogVisible" :title="statusDialogTitle" width="420px" destroy-on-close>
-      <el-form ref="statusFormRef" :model="statusForm" label-width="100px">
-        <el-form-item label="设施名称">
-          <strong>{{ statusTarget?.name || '-' }}</strong>
-        </el-form-item>
-        <el-form-item label="当前状态">
-          <el-tag :type="statusType(statusTarget?.status)">{{ statusLabel(statusTarget?.status) }}</el-tag>
-        </el-form-item>
-        <el-form-item :label="statusTarget?.status === 'MAINTENANCE' ? '恢复说明' : '维护说明'" prop="reason">
-          <el-input
-            v-model="statusForm.reason"
-            type="textarea"
-            :rows="3"
-            :placeholder="statusTarget?.status === 'MAINTENANCE' ? '填写恢复可用说明' : '填写开始维护说明'"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="statusDialogVisible = false">取消</el-button>
-        <el-button :type="statusTarget?.status === 'MAINTENANCE' ? 'primary' : 'warning'" :loading="statusLoading" @click="confirmStatusChange">
-          {{ statusTarget?.status === 'MAINTENANCE' ? '确认恢复' : '确认开始维护' }}
-        </el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { facilityAPI, facilityCategoryAPI } from '../../api'
-import { ElMessage } from 'element-plus'
 import { buildFeatureVars, getRoleTheme } from '../../utils/featureTheme'
+
 const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
 const theme = getRoleTheme(userInfo.role || 'maintainer')
 const featureVars = buildFeatureVars(theme)
 
 const tableRef = ref(null)
 const createFormRef = ref(null)
-const statusFormRef = ref(null)
 
+const loading = ref(false)
+const timelineLoading = ref(false)
 const searchKeyword = ref('')
 const facilities = ref([])
+const paginatedFacilities = ref([])
 const categories = ref([])
 const selectedFacility = ref(null)
 const facilityTimeline = ref([])
-const selectedSort = ref({ prop: 'name', order: 'ascending' })
 
 const createVisible = ref(false)
 const createLoading = ref(false)
+const detailDialogVisible = ref(false)
+
 const createForm = ref({
   name: '',
   categoryId: null,
@@ -282,18 +307,12 @@ const createForm = ref({
   price: null,
   image: null
 })
+
 const createRules = {
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  name: [{ required: true, message: '请输入场地名称', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入设施名称', trigger: 'blur' }],
   location: [{ required: true, message: '请输入位置', trigger: 'blur' }]
 }
-
-const detailDialogVisible = ref(false)
-const statusDialogVisible = ref(false)
-const statusLoading = ref(false)
-const statusTarget = ref(null)
-const statusForm = ref({ reason: '' })
-const statusDialogTitle = ref('')
 
 const pagination = ref({
   current: 1,
@@ -308,13 +327,12 @@ const stats = ref({
   damaged: 0
 })
 
-const paginatedFacilities = ref([])
-
 const normalizeFacility = (facility = {}) => ({
   ...facility,
   categoryName: facility.categoryName || facility.category || '-',
   image: facility.image || facility.imageUrl || '',
-  imageUrl: facility.imageUrl || facility.image || ''
+  imageUrl: facility.imageUrl || facility.image || '',
+  maintainerName: facility.maintainerName || facility.maintainer || ''
 })
 
 onMounted(async () => {
@@ -323,19 +341,27 @@ onMounted(async () => {
 })
 
 const loadFacilities = async () => {
+  loading.value = true
   try {
     const response = await facilityAPI.mine()
     const rawList = response.data?.list || response.data?.records || response.data || []
     const list = Array.isArray(rawList) ? rawList.map(normalizeFacility) : []
 
     facilities.value = list
-    pagination.value.total = list.length
     stats.value.total = list.length
-    stats.value.available = list.filter((f) => f.status === 'AVAILABLE' || f.status === 'ACTIVE').length
-    stats.value.maintenance = list.filter((f) => f.status === 'MAINTENANCE').length
-    stats.value.damaged = list.filter((f) => f.status === 'DAMAGED' || f.status === 'INACTIVE').length
+    stats.value.available = list.filter(
+      (item) => item.status === 'AVAILABLE' || item.status === 'ACTIVE'
+    ).length
+    stats.value.maintenance = list.filter((item) => item.status === 'MAINTENANCE').length
+    stats.value.damaged = list.filter(
+      (item) => item.status === 'DAMAGED' || item.status === 'INACTIVE'
+    ).length
   } catch (error) {
     console.error('加载设施列表失败', error)
+    ElMessage.error(error?.response?.data?.message || '加载设施列表失败')
+    facilities.value = []
+  } finally {
+    loading.value = false
   }
 }
 
@@ -354,24 +380,30 @@ const loadCategories = async () => {
   }
 }
 
-const applyPagination = () => {
-  const page = pagination.value.current
-  const size = pagination.value.pageSize
-  const start = (page - 1) * size
-  const end = start + size
-
-  let list = facilities.value
+const getFilteredFacilities = () => {
   const keyword = searchKeyword.value.trim().toLowerCase()
-  if (keyword) {
-    list = list.filter(
-      (f) =>
-        (f.name && f.name.toLowerCase().includes(keyword)) ||
-        (f.model && f.model.toLowerCase().includes(keyword)) ||
-        (f.categoryName && f.categoryName.toLowerCase().includes(keyword))
-    )
+  if (!keyword) {
+    return [...facilities.value]
   }
 
+  return facilities.value.filter((item) =>
+    [item.name, item.model, item.categoryName, item.location]
+      .filter(Boolean)
+      .some((field) => String(field).toLowerCase().includes(keyword))
+  )
+}
+
+const applyPagination = () => {
+  const list = getFilteredFacilities()
   pagination.value.total = list.length
+
+  const maxPage = Math.max(1, Math.ceil(list.length / pagination.value.pageSize))
+  if (pagination.value.current > maxPage) {
+    pagination.value.current = maxPage
+  }
+
+  const start = (pagination.value.current - 1) * pagination.value.pageSize
+  const end = start + pagination.value.pageSize
   paginatedFacilities.value = list.slice(start, end)
 }
 
@@ -389,10 +421,6 @@ const handlePageChange = () => {
   applyPagination()
 }
 
-const handleSortChange = ({ prop, order }) => {
-  selectedSort.value = { prop, order }
-}
-
 const handleRowClick = (row) => {
   selectedFacility.value = normalizeFacility(row)
   facilityTimeline.value = []
@@ -401,18 +429,22 @@ const handleRowClick = (row) => {
 }
 
 const loadTimeline = async (facilityId) => {
+  timelineLoading.value = true
   try {
-    const response = await facilityAPI.getFacilityTimeline(facilityId)
-    const data = response.data?.reservations || response.data || []
-    facilityTimeline.value = Array.isArray(data)
-      ? data.map((item) => ({
+    const response = await facilityAPI.getFacilityTimeline(facilityId, 30)
+    const rawList = response.data?.reservations || response.data || []
+    facilityTimeline.value = Array.isArray(rawList)
+      ? rawList.map((item) => ({
           ...item,
           username: item.username || item.userName || '未知用户'
         }))
       : []
   } catch (error) {
-    console.error('加载排期失败', error)
+    console.error('加载预约明细失败', error)
     facilityTimeline.value = []
+    ElMessage.error(error?.response?.data?.message || '加载预约明细失败')
+  } finally {
+    timelineLoading.value = false
   }
 }
 
@@ -436,45 +468,39 @@ const handleImageChange = (uploadFile) => {
 }
 
 const handleCreate = async () => {
-  ElMessage.info('新增场地请使用管理员账号操作')
+  ElMessage.info('新增设施请使用系统管理员账号操作')
   createVisible.value = false
-  return
-  const valid = await createFormRef.value.validate().catch(() => {})
-  if (!valid) return
-  createLoading.value = true
+}
+
+const handleDelete = async (row) => {
   try {
-    await facilityAPI.createFacility(createForm.value)
-    ElMessage.success('场地创建成功')
-    createVisible.value = false
+    await ElMessageBox.confirm(
+      `确认删除“${row.name}”吗？删除后将无法恢复。`,
+      '删除设施',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    await facilityAPI.deleteFacility(row.id)
+    ElMessage.success('设施删除成功')
+
+    if (selectedFacility.value?.id === row.id) {
+      detailDialogVisible.value = false
+      selectedFacility.value = null
+      facilityTimeline.value = []
+    }
+
     await loadFacilities()
     applyPagination()
   } catch (error) {
-    console.error('创建场地失败', error)
-  } finally {
-    createLoading.value = false
-  }
-}
-
-const handleEditStatus = (row) => {
-  statusTarget.value = row
-  statusForm.value = { reason: '' }
-  statusDialogTitle.value = row.status === 'MAINTENANCE' ? '恢复可用' : '开始维护'
-  statusDialogVisible.value = true
-}
-
-const confirmStatusChange = async () => {
-  statusLoading.value = true
-  try {
-    const targetStatus = statusTarget.value.status === 'MAINTENANCE' ? 'AVAILABLE' : 'MAINTENANCE'
-    await facilityAPI.updateFacilityStatus(statusTarget.value.id, targetStatus, statusForm.value.reason)
-    ElMessage.success('状态更新成功')
-    statusDialogVisible.value = false
-    await loadFacilities()
-    applyPagination()
-  } catch (error) {
-    console.error('状态更新失败', error)
-  } finally {
-    statusLoading.value = false
+    if (error === 'cancel' || error === 'close') {
+      return
+    }
+    console.error('删除设施失败', error)
+    ElMessage.error(error?.response?.data?.message || error?.message || '删除设施失败')
   }
 }
 
@@ -484,7 +510,7 @@ const statusType = (status) => {
     ACTIVE: 'success',
     MAINTENANCE: 'warning',
     DAMAGED: 'danger',
-    INACTIVE: 'danger'
+    INACTIVE: 'info'
   }
   return map[status] || 'info'
 }
@@ -500,6 +526,18 @@ const statusLabel = (status) => {
   return map[status] || status || '-'
 }
 
+const reservationStatusLabel = (status) => {
+  const map = {
+    PENDING: '待审核',
+    APPROVED: '已通过',
+    ACTIVE: '进行中',
+    COMPLETED: '已完成',
+    REJECTED: '已拒绝',
+    CANCELLED: '已取消'
+  }
+  return map[status] || status || '-'
+}
+
 const getImageSrc = (image) => {
   if (!image) return '/files/facility/default-facility.svg'
   if (image.startsWith('http') || image.startsWith('/')) return image
@@ -511,33 +549,41 @@ const formatDate = (value) => {
   return new Date(value).toLocaleDateString('zh-CN')
 }
 
-const formatRange = (start, end) => {
-  if (!start || !end) return '-'
-  const s = new Date(start)
-  const e = new Date(end)
-  return `${s.toLocaleDateString('zh-CN')} ${s.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} ~ ${e.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
-}
-
-const formatPrice = (value) => {
-  if (!value && value !== 0) return '-'
-  const numberValue = typeof value === 'string' ? parseFloat(value) : value
-  if (isNaN(numberValue)) return '-'
-  return `¥${numberValue.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
-  return `¥${numberValue.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
-}
-
 const formatDateTime = (value) => {
   if (!value) return '-'
   return new Date(value).toLocaleString('zh-CN', { hour12: false })
+}
+
+const formatRange = (start, end) => {
+  if (!start || !end) return '-'
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  return `${startDate.toLocaleDateString('zh-CN')} ${startDate.toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })} - ${endDate.toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })}`
+}
+
+const formatPrice = (value) => {
+  if (value === null || value === undefined || value === '') return '-'
+  const amount = typeof value === 'string' ? Number.parseFloat(value) : Number(value)
+  if (Number.isNaN(amount)) return '-'
+  return `¥${amount.toLocaleString('zh-CN', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`
 }
 </script>
 
 <style scoped>
 .facility-theme {
-  padding: 24px;
   min-height: 100%;
+  padding: 24px;
   background:
-    radial-gradient(circle at top left, var(--feature-soft), transparent 26%),
+    radial-gradient(circle at top left, var(--feature-soft), transparent 24%),
     linear-gradient(180deg, var(--layout-shell-top) 0%, var(--layout-shell-bottom) 100%);
 }
 
@@ -549,17 +595,19 @@ const formatDateTime = (value) => {
 
 .page-hero {
   display: grid;
-  grid-template-columns: 1.7fr 1fr;
+  grid-template-columns: minmax(0, 1fr) 200px;
   gap: 20px;
+  align-items: stretch;
   padding: 28px;
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.84);
   border: 1px solid var(--feature-soft);
   box-shadow: 0 24px 60px var(--feature-glow);
 }
 
 .eyebrow {
   display: inline-flex;
+  align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
   background: var(--feature-soft);
@@ -571,41 +619,37 @@ const formatDateTime = (value) => {
 
 .hero-copy h1 {
   margin: 14px 0 10px;
+  color: #102a27;
   font-size: 32px;
-  color: #0f172a;
 }
 
 .hero-copy p {
   margin: 0;
   color: #52606d;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
-.hero-aside {
-  display: grid;
-  gap: 14px;
-}
-
-.mini-card {
+.hero-badge {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 110px;
-  padding: 18px 20px;
-  border-radius: 22px;
+  align-items: flex-start;
+  padding: 22px 24px;
+  border-radius: 24px;
   background: linear-gradient(135deg, var(--feature-surface) 0%, #ffffff 100%);
   border: 1px solid var(--feature-soft);
 }
 
-.mini-card span {
+.hero-badge span,
+.hero-badge small {
   color: #5f6b75;
-  font-size: 13px;
 }
 
-.mini-card strong {
-  margin-top: 10px;
+.hero-badge strong {
+  margin: 10px 0 4px;
   color: #102a27;
-  font-size: 24px;
+  font-size: 36px;
+  line-height: 1;
 }
 
 .summary-grid {
@@ -636,8 +680,8 @@ const formatDateTime = (value) => {
 .summary-card strong {
   display: block;
   margin-top: 10px;
-  font-size: 28px;
   color: #0f172a;
+  font-size: 28px;
 }
 
 .control-card,
@@ -653,29 +697,63 @@ const formatDateTime = (value) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 20px;
 }
 
-.control-copy h2 {
+.control-copy h2,
+.panel-header h2 {
   margin: 0;
-  font-size: 20px;
   color: #102a27;
+  font-size: 20px;
 }
 
-.control-copy p {
+.control-copy p,
+.panel-header p {
   margin: 8px 0 0;
   color: #667085;
   font-size: 13px;
+  line-height: 1.7;
 }
 
 .control-actions {
   display: flex;
-  gap: 12px;
   align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .search-input {
-  width: 280px;
+  width: 300px;
+}
+
+.action-btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.search-btn {
+  background: linear-gradient(135deg, var(--feature-primary) 0%, #4d8761 100%);
+}
+
+.create-btn {
+  background: linear-gradient(135deg, #6fb985 0%, var(--feature-primary) 100%);
+}
+
+.upload-btn {
+  border-radius: 12px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
 .facility-cell {
@@ -685,12 +763,12 @@ const formatDateTime = (value) => {
 }
 
 .facility-thumb {
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
   overflow: hidden;
   border-radius: 16px;
   background: var(--feature-surface);
-  flex-shrink: 0;
 }
 
 .facility-thumb img {
@@ -699,15 +777,19 @@ const formatDateTime = (value) => {
   object-fit: cover;
 }
 
+.facility-copy {
+  min-width: 0;
+}
+
 .facility-name {
-  font-weight: 700;
   color: #0f172a;
+  font-weight: 700;
 }
 
 .facility-meta {
   margin-top: 4px;
-  font-size: 12px;
   color: #667085;
+  font-size: 12px;
 }
 
 .row-actions {
@@ -716,14 +798,28 @@ const formatDateTime = (value) => {
   gap: 10px;
 }
 
-.facility-detail-dialog :deep(.el-dialog__body) {
-  padding-top: 8px;
+.row-btn {
+  min-width: 76px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.detail-btn {
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.14);
+}
+
+.delete-btn {
+  border-color: rgba(220, 38, 38, 0.28);
 }
 
 .pagination-wrap {
   display: flex;
   justify-content: flex-end;
   margin-top: 18px;
+}
+
+.facility-detail-dialog :deep(.el-dialog__body) {
+  padding-top: 8px;
 }
 
 .detail-layout {
@@ -869,6 +965,12 @@ const formatDateTime = (value) => {
   text-align: center;
 }
 
+.image-name {
+  margin-left: 10px;
+  color: #667085;
+  font-size: 12px;
+}
+
 @keyframes rise-in {
   from {
     opacity: 0;
@@ -889,8 +991,8 @@ const formatDateTime = (value) => {
 
 @media (max-width: 900px) {
   .page-hero,
-  .detail-hero,
-  .control-card {
+  .control-card,
+  .detail-hero {
     grid-template-columns: 1fr;
   }
 
@@ -898,7 +1000,10 @@ const formatDateTime = (value) => {
     align-items: stretch;
   }
 
-  .control-actions,
+  .control-actions {
+    justify-content: flex-start;
+  }
+
   .search-input {
     width: 100%;
   }
@@ -912,6 +1017,10 @@ const formatDateTime = (value) => {
   .summary-grid,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .row-actions {
+    flex-wrap: wrap;
   }
 }
 </style>

@@ -4,7 +4,7 @@
       <div class="hero-copy">
         <span class="eyebrow">Maintenance Dashboard</span>
         <h1>数据统计</h1>
-        <p>展示本人负责场地的维护任务、设施热度、预约高峰和热门区域，方便你快速判断开放策略和处理优先级。</p>
+        <p>数据统计展示负责设施的维护任务、设施热度、预约高峰和热门区域，方便你快速判断开放策略和处理优先级。</p>
       </div>
 
       <div class="hero-tools">
@@ -17,7 +17,7 @@
         </el-select>
 
         <div class="quick-links">
-          <button type="button" @click="goTo('/maintainer/facility')">查看场地</button>
+          <button type="button" @click="goTo('/maintainer/facility')">查看设施</button>
           <button type="button" @click="goTo('/maintainer/maintenance')">维护登记</button>
           <button type="button" @click="goTo('/maintainer/reservation')">预约处理</button>
           <button type="button" @click="goTo('/maintainer/violation-report')">违规上报</button>
@@ -27,7 +27,7 @@
 
     <section class="stats-grid">
       <article class="stat-card" @click="goTo('/maintainer/facility')">
-        <span class="stat-label">负责场地</span>
+        <span class="stat-label">负责设施</span>
         <strong>{{ stats.totalFacilities }}</strong>
       </article>
       <article class="stat-card" @click="goTo('/maintainer/maintenance', { status: 'PENDING' })">
@@ -87,8 +87,8 @@
         <template #header>
           <div class="card-header">
             <div>
-              <h2>故障高发场地</h2>
-              <p>场地故障频次越高，越需要重新审视维护节奏。</p>
+              <h2>故障高发设施</h2>
+              <p>设施故障频次越高，越需要重新审视维护节奏。</p>
             </div>
           </div>
         </template>
@@ -161,7 +161,7 @@
             <article v-for="item in hotRegions" :key="item.location" class="list-row">
               <div>
                 <strong>{{ item.location }}</strong>
-                <span>{{ item.facilityCount }} 个场地</span>
+                <span>{{ item.facilityCount }} 个设施</span>
               </div>
               <div class="list-metric">
                 <strong>{{ item.bookingCount }}</strong>
@@ -482,7 +482,7 @@ const renderHeatmapChart = () => {
     tooltip: {
       formatter: (params) => {
         const [hourIndex, facilityIndex, value] = params.value
-        const facility = heatmapStats.value.facilities?.[facilityIndex] || '未知场地'
+        const facility = heatmapStats.value.facilities?.[facilityIndex] || '未知设施'
         const slot = heatmapStats.value.timeSlots?.[hourIndex] || '-'
         return `${facility}<br/>${slot}<br/>预约热度：${value}`
       }

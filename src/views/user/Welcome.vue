@@ -2,7 +2,7 @@
   <div class="welcome-page">
     <section class="welcome-hero">
       <div class="hero-copy">
-        <span class="hero-kicker">校园设施服务台</span>
+        <span class="hero-kicker">Welcome</span>
         <h1>欢迎回来，{{ displayName }}</h1>
         <p>
           今天也适合高效安排课程、实验和活动。这里保留用户端的轻量操作流，让你可以更快进入设施浏览、预约管理和反馈处理。
@@ -23,7 +23,7 @@
         <div class="card-head">
           <div>
             <h2>今日心情与天气</h2>
-            <p>把环境信息和一句轻松提示放在一起，首页会更自然，也更实用。</p>
+            <p></p>
           </div>
           <el-button class="refresh-btn" :loading="loading" @click="fetchWeather">刷新天气</el-button>
         </div>
@@ -86,7 +86,7 @@
         <div class="card-head">
           <div>
             <h2>快捷功能</h2>
-            <p>每个入口都做成独立卡片，用户一眼就能找到要去的页面。</p>
+            <p></p>
           </div>
         </div>
 

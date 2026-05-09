@@ -76,6 +76,7 @@
 
       <el-table
         :data="facilityList"
+        row-key="id"
         class="facility-table"
         @row-click="handleRowClick"
         v-loading="loading"
@@ -85,11 +86,12 @@
             <div class="facility-cell">
               <div class="facility-image">
                 <img
-                  v-if="row.imageUrl && isValidImageUrl(row.imageUrl)"
+                  v-if="hasRenderableImage(row)"
+                  :key="getRowImageKey(row)"
                   :src="row.imageUrl"
                   :alt="row.name"
                   class="facility-thumb"
-                  @error="handleImageError"
+                  @error="handleImageError(row)"
                 />
                 <div v-else class="no-image">
                   <el-icon><Picture /></el-icon>
@@ -418,6 +420,7 @@ const uploading = ref(false);
 const isEdit = ref(false);
 const total = ref(0);
 const facilityList = ref([]);
+const brokenImageKeys = ref(new Set());
 const categoryOptions = ref([]);
 const maintainerOptions = ref([]);
 const searchKeyword = ref('');
@@ -480,6 +483,7 @@ function createEmptyForm() {
 async function loadFacilityList() {
   try {
     loading.value = true;
+    brokenImageKeys.value = new Set();
     const params = {
       page: pagination.page - 1,
       size: pagination.size,
@@ -698,20 +702,22 @@ function handleDeleteImage() {
     .catch(() => {});
 }
 
-function handleImageError(event) {
-  if (!event?.target) {
-    return;
-  }
-  event.target.style.display = 'none';
-  const parent = event.target.parentElement;
-  const fallback = parent?.querySelector('.no-image');
-  if (fallback) {
-    fallback.style.display = 'flex';
-  }
+function handleImageError(row) {
+  const nextBrokenImageKeys = new Set(brokenImageKeys.value);
+  nextBrokenImageKeys.add(getRowImageKey(row));
+  brokenImageKeys.value = nextBrokenImageKeys;
 }
 
 function isValidImageUrl(url) {
   return Boolean(url) && !url.startsWith('blob:');
+}
+
+function getRowImageKey(row) {
+  return `${row?.id ?? 'unknown'}::${row?.imageUrl || ''}`;
+}
+
+function hasRenderableImage(row) {
+  return isValidImageUrl(row?.imageUrl) && !brokenImageKeys.value.has(getRowImageKey(row));
 }
 
 function triggerFileSelect() {

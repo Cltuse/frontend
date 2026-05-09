@@ -3,9 +3,9 @@
     <section class="page-header">
       <div class="header-content">
         <div>
-          <span class="page-kicker">信用与违规信息</span>
+          <span class="page-kicker">Violation Records</span>
           <h1 class="page-title">违规记录</h1>
-          <p class="page-subtitle">查看历史违规、处罚分值和当前信用分，页面信息更集中、更容易核对。</p>
+          <p class="page-subtitle">你可以查看所有已处理的违规记录，包括违规类型、处罚分值、状态等。</p>
         </div>
       </div>
     </section>
@@ -52,7 +52,7 @@
       <div class="table-head">
         <div>
           <h2>违规记录列表</h2>
-          <p>使用更清晰的卡片式表格，重点突出违规类型、处罚分值和状态。</p>
+          <p>你可以查看所有已处理的违规记录，包括违规类型、处罚分值、状态等。</p>
         </div>
       </div>
 

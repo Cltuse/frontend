@@ -402,6 +402,13 @@ async function handlePasswordSubmit() {
   --theme-soft: var(--feature-soft);
   --theme-border: var(--feature-border);
   --theme-shadow: var(--feature-glow);
+  --theme-text-main: #17314d;
+  --theme-text-secondary: #67778f;
+  --theme-text-muted: #72839b;
+  --theme-chip-bg: rgba(200, 216, 240, 0.24);
+  --theme-chip-strong: #4b6f99;
+  --theme-panel-bg: #f9fbff;
+  --theme-card-tint: linear-gradient(135deg, rgba(200, 216, 240, 0.42), rgba(255, 255, 255, 0.98));
   min-height: 100%;
   display: grid;
   gap: 20px;
@@ -442,8 +449,8 @@ async function handlePasswordSubmit() {
   align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(200, 216, 240, 0.24);
-  color: #4b6f99;
+  background: var(--theme-chip-bg);
+  color: var(--theme-chip-strong);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -453,7 +460,7 @@ async function handlePasswordSubmit() {
 .feature-head h2,
 .dialog-header h3 {
   margin: 14px 0 10px;
-  color: #17314d;
+  color: var(--theme-text-main);
 }
 
 .hero-copy h1 {
@@ -464,7 +471,7 @@ async function handlePasswordSubmit() {
 .feature-head p,
 .dialog-header p {
   margin: 0;
-  color: #67778f;
+  color: var(--theme-text-secondary);
   line-height: 1.8;
 }
 
@@ -502,10 +509,10 @@ async function handlePasswordSubmit() {
 }
 
 .warning-btn {
-  border: none;
-  color: #fff;
-  background: linear-gradient(135deg, #f0b36f 0%, #cb8840 100%);
-  box-shadow: 0 14px 28px rgba(203, 136, 64, 0.22);
+  border: 1px solid rgba(95, 143, 189, 0.2);
+  color: var(--theme-deep);
+  background: linear-gradient(135deg, rgba(223, 235, 247, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+  box-shadow: 0 14px 28px rgba(95, 143, 189, 0.16);
 }
 
 .small-btn {
@@ -532,7 +539,7 @@ async function handlePasswordSubmit() {
   overflow: hidden;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, rgba(200, 216, 240, 0.42), rgba(255, 255, 255, 0.98));
+  background: var(--theme-card-tint);
   color: #5579a4;
   font-size: 32px;
   font-weight: 700;
@@ -551,7 +558,7 @@ async function handlePasswordSubmit() {
 }
 
 .hero-profile-copy strong {
-  color: #17314d;
+  color: var(--theme-text-main);
   font-size: 20px;
 }
 
@@ -559,7 +566,7 @@ async function handlePasswordSubmit() {
 .hero-profile-copy small,
 .summary-label,
 .summary-card p {
-  color: #72839b;
+  color: var(--theme-text-muted);
 }
 
 .summary-grid {
@@ -576,7 +583,7 @@ async function handlePasswordSubmit() {
 .summary-card strong {
   display: block;
   margin: 14px 0 8px;
-  color: #17314d;
+  color: var(--theme-text-main);
   font-size: 26px;
 }
 
@@ -612,13 +619,13 @@ async function handlePasswordSubmit() {
 }
 
 .profile-icon {
-  background: linear-gradient(135deg, rgba(200, 216, 240, 0.42), rgba(255, 255, 255, 0.98));
+  background: var(--theme-card-tint);
   color: #5579a4;
 }
 
 .security-icon {
-  background: linear-gradient(135deg, rgba(255, 228, 191, 0.42), rgba(255, 255, 255, 0.98));
-  color: #cb8840;
+  background: var(--theme-card-tint);
+  color: var(--theme-deep);
 }
 
 .feature-body {
@@ -633,27 +640,27 @@ async function handlePasswordSubmit() {
   gap: 16px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: #f9fbff;
+  background: var(--theme-panel-bg);
 }
 
 .profile-row span,
 .security-hint {
-  color: #72839b;
+  color: var(--theme-text-muted);
 }
 
 .profile-row strong {
-  color: #17314d;
+  color: var(--theme-text-main);
   text-align: right;
 }
 
 .security-card .profile-row strong {
-  color: #825522;
+  color: var(--theme-deep);
 }
 
 .security-hint {
   padding: 16px 18px;
   border-radius: 18px;
-  background: rgba(255, 245, 231, 0.92);
+  background: rgba(223, 235, 247, 0.72);
   line-height: 1.8;
 }
 
@@ -679,13 +686,13 @@ async function handlePasswordSubmit() {
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  background: rgba(200, 216, 240, 0.24);
+  background: var(--theme-chip-bg);
   color: var(--theme-deep);
 }
 
 .security-badge {
-  background: rgba(255, 228, 191, 0.28);
-  color: #cb8840;
+  background: rgba(223, 235, 247, 0.72);
+  color: var(--theme-deep);
 }
 
 .avatar-edit-panel {
@@ -695,7 +702,7 @@ async function handlePasswordSubmit() {
   margin-bottom: 22px;
   padding: 20px;
   border-radius: 22px;
-  background: #f9fbff;
+  background: var(--theme-panel-bg);
 }
 
 .avatar-preview-wrap {
@@ -706,7 +713,7 @@ async function handlePasswordSubmit() {
 .avatar-preview.placeholder {
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, rgba(200, 216, 240, 0.42), rgba(255, 255, 255, 0.98));
+  background: var(--theme-card-tint);
   color: #5579a4;
   font-size: 34px;
   font-weight: 700;
@@ -720,7 +727,7 @@ async function handlePasswordSubmit() {
 
 .avatar-actions p {
   margin: 0;
-  color: #67778f;
+  color: var(--theme-text-secondary);
   line-height: 1.7;
 }
 
@@ -734,7 +741,7 @@ async function handlePasswordSubmit() {
   border-radius: 14px;
   box-shadow: none;
   border: 1px solid var(--feature-border);
-  background: #f9fbff;
+  background: var(--theme-panel-bg);
 }
 
 .dialog-footer {

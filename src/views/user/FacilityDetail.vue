@@ -964,14 +964,14 @@ async function handleSubmit() {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 380px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
+  gap: 24px;
   align-items: start;
 }
 
 .info-card,
 .timeline-card {
-  padding: 24px;
+  padding: 26px;
   transition: transform 0.24s ease, box-shadow 0.24s ease;
 }
 
@@ -985,6 +985,28 @@ async function handleSubmit() {
   display: grid;
   grid-template-rows: auto 1fr;
   min-height: 0;
+  background:
+    radial-gradient(circle at top right, rgba(245, 183, 192, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(255, 251, 252, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.info-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(245, 183, 192, 0.14), transparent 24%),
+    linear-gradient(180deg, rgba(255, 250, 251, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.info-card::after {
+  content: '';
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  top: 104px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(245, 183, 192, 0.18), rgba(245, 183, 192, 0.02));
+  pointer-events: none;
 }
 
 .timeline-head {
@@ -1018,7 +1040,7 @@ async function handleSubmit() {
 }
 
 .section-head {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .section-head h2 {
@@ -1030,38 +1052,47 @@ async function handleSubmit() {
   margin: 8px 0 0;
   color: #8a6a76;
   line-height: 1.7;
+  max-width: 60ch;
 }
 
 .info-grid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
 .info-item {
-  padding: 16px 18px;
-  border-radius: 20px;
-  background: #fff8fa;
-  border: 1px solid rgba(245, 183, 192, 0.14);
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 246, 248, 0.92), rgba(255, 252, 253, 0.96));
+  border: 1px solid rgba(245, 183, 192, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .info-item label {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(245, 183, 192, 0.12);
   color: #8e717b;
   font-size: 12px;
 }
 
 .info-item strong {
   display: block;
-  margin-top: 8px;
+  margin-top: 10px;
   color: #7a4052;
-  line-height: 1.6;
+  line-height: 1.5;
+  min-height: 42px;
 }
 
 .description-box {
-  margin-top: 16px;
-  padding: 18px;
+  margin-top: 18px;
+  padding: 18px 20px;
   border-radius: 22px;
-  background: rgba(255, 246, 248, 0.92);
+  background: linear-gradient(180deg, rgba(255, 247, 249, 0.94), rgba(255, 252, 253, 0.98));
+  border: 1px solid rgba(245, 183, 192, 0.12);
 }
 
 .description-box h3 {
@@ -1080,11 +1111,11 @@ async function handleSubmit() {
 }
 
 .rule-section {
-  margin-top: 16px;
-  padding: 18px;
+  margin-top: 18px;
+  padding: 20px;
   border-radius: 22px;
-  background: rgba(255, 249, 250, 0.98);
-  border: 1px solid rgba(245, 183, 192, 0.14);
+  background: linear-gradient(180deg, rgba(255, 249, 250, 0.98), rgba(255, 253, 253, 0.98));
+  border: 1px solid rgba(245, 183, 192, 0.12);
 }
 
 .rule-loading,
@@ -1101,10 +1132,10 @@ async function handleSubmit() {
 }
 
 .rule-item {
-  padding: 14px 16px;
+  padding: 13px 14px;
   border-radius: 18px;
   background: #ffffff;
-  border: 1px solid rgba(245, 183, 192, 0.14);
+  border: 1px solid rgba(245, 183, 192, 0.1);
 }
 
 .rule-item span {
@@ -1123,13 +1154,15 @@ async function handleSubmit() {
 .schedule-shell {
   min-height: 0;
   overflow: auto;
-  border-radius: 24px;
-  border: 1px solid rgba(245, 183, 192, 0.14);
-  background: linear-gradient(180deg, rgba(255, 249, 250, 0.9), rgba(255, 255, 255, 0.98));
+  border-radius: 26px;
+  border: 1px solid rgba(245, 183, 192, 0.1);
+  background: linear-gradient(180deg, rgba(255, 249, 250, 0.84), rgba(255, 255, 255, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
 .schedule-table {
   min-width: 980px;
+  padding: 10px;
 }
 
 .schedule-row {
@@ -1139,11 +1172,12 @@ async function handleSubmit() {
 
 .schedule-header {
   position: sticky;
-  top: 0;
+  top: -1px;
   z-index: 2;
-  background: rgba(255, 247, 249, 0.96);
+  background: rgba(255, 247, 249, 0.98);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(245, 183, 192, 0.14);
+  border-bottom: 1px solid rgba(245, 183, 192, 0.1);
+  border-radius: 18px 18px 0 0;
 }
 
 .schedule-time-head,
@@ -1151,8 +1185,8 @@ async function handleSubmit() {
 .schedule-time-cell,
 .schedule-cell {
   padding: 14px 12px;
-  border-right: 1px solid rgba(245, 183, 192, 0.12);
-  border-bottom: 1px solid rgba(245, 183, 192, 0.12);
+  border-right: 1px solid rgba(245, 183, 192, 0.08);
+  border-bottom: 1px solid rgba(245, 183, 192, 0.08);
 }
 
 .schedule-row > :last-child {
@@ -1161,13 +1195,17 @@ async function handleSubmit() {
 
 .schedule-time-head,
 .schedule-time-cell {
-  background: rgba(255, 250, 251, 0.98);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: rgba(255, 250, 251, 0.99);
 }
 
 .schedule-time-head {
   color: #8a6a76;
   font-size: 13px;
   font-weight: 700;
+  z-index: 3;
 }
 
 .schedule-day-head {
@@ -1198,6 +1236,7 @@ async function handleSubmit() {
   justify-content: space-between;
   gap: 8px;
   font-size: 12px;
+  transition: background 0.2s ease;
 }
 
 .cell-status {
@@ -1230,6 +1269,11 @@ async function handleSubmit() {
   background: rgba(255, 255, 255, 0.7);
   color: inherit;
   cursor: pointer;
+}
+
+.schedule-data-row:nth-child(even) .schedule-time-cell,
+.schedule-data-row:nth-child(even) .schedule-cell.slot-empty {
+  background-color: rgba(255, 251, 252, 0.72);
 }
 
 .facility-detail-page :deep(.el-dialog) {
@@ -1334,6 +1378,10 @@ async function handleSubmit() {
   .content-grid {
     grid-template-columns: 1fr;
   }
+
+  .info-card::after {
+    top: 96px;
+  }
 }
 
 @media (max-width: 980px) {
@@ -1345,11 +1393,16 @@ async function handleSubmit() {
   .timeline-head {
     flex-direction: column;
   }
+
+  .info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 768px) {
   .summary-grid,
-  .rule-grid {
+  .rule-grid,
+  .info-grid {
     grid-template-columns: 1fr;
   }
 

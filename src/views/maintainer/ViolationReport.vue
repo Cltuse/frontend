@@ -4,7 +4,7 @@
       <div class="hero-copy">
         <span class="eyebrow">Violation Workflow</span>
         <h1>违规记录上报</h1>
-        <p>上报当前负责场地下的预约违规记录，包括违规用户、违规预约、违规时间等。</p>
+        <p>管理所有负责设施的违规记录，包括创建、编辑、完成和详情查看。</p>
       </div>
       
     </section>
@@ -15,7 +15,7 @@
           <div class="panel-header">
             <div>
               <h2>新增违规</h2>
-              <p>先选用户，再选择该用户在你负责场地下的预约。</p>
+              <p>上报当前负责设施下的预约违规记录，包括违规用户、违规预约、违规时间等。</p>
             </div>
           </div>
         </template>
@@ -48,7 +48,7 @@
           <el-form-item label="关联预约" prop="reservationId">
             <el-select
               v-model="violationForm.reservationId"
-              placeholder="选择该用户在你负责场地的预约"
+              placeholder="选择该用户在你负责设施的预约"
               filterable
               clearable
               style="width: 100%"
@@ -114,7 +114,7 @@
             <div class="panel-header">
               <div>
                 <h2>违规记录</h2>
-                <p>当前负责场地下的已上报违规记录列表。</p>
+                <p>当前负责设施下的已上报违规记录列表。</p>
               </div>
               <div class="panel-tools">
                 <el-input
@@ -382,7 +382,7 @@ const formatUserLabel = (user) => {
 }
 
 const formatReservationLabel = (reservation) => {
-  const facility = reservation.facilityName || `场地 #${reservation.facilityId}`
+  const facility = reservation.facilityName || `设施 #${reservation.facilityId}`
   return `${facility} · ${formatDateTime(reservation.startTime)}`
 }
 
