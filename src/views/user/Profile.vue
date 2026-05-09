@@ -3,9 +3,9 @@
     <section class="page-header">
       <div class="header-content">
         <div>
-          <span class="page-kicker">账户设置中心</span>
+          <span class="page-kicker">Profile</span>
           <h1 class="page-title">个人中心</h1>
-          <p class="page-subtitle">把个人资料和账户安全拆成清晰的功能卡片，便于用户逐项维护。</p>
+          <p class="page-subtitle">你可以查看和管理自己的个人资料、预约记录、反馈记录等。</p>
         </div>
       </div>
     </section>

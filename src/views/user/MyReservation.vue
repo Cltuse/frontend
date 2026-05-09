@@ -2,9 +2,9 @@
   <div class="page-shell my-reservation-page">
     <section class="page-hero">
       <div class="hero-copy">
-        <span class="hero-kicker">预约管理</span>
+        <span class="hero-kicker">My Reservation</span>
         <h1>我的预约</h1>
-        <p>集中查看预约进度、签到状态和历史记录，保持用户端预约管理体验清晰统一。</p>
+        <p>你可以查看所有已预约的设施，包括待确认、待签到、已签到等状态。</p>
       </div>
     </section>
 

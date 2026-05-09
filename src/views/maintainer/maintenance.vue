@@ -4,7 +4,7 @@
       <div class="hero-copy">
         <span class="eyebrow">Maintenance Management</span>
         <h1>维护登记</h1>
-        <p>管理本人负责场地的维护任务，包括创建、编辑、完成和详情查看。</p>
+        <p>管理所有设施的维护任务，包括创建、编辑、完成和详情查看。</p>
       </div>      
     </section>
 
@@ -66,7 +66,7 @@
 
     <section class="panel-card">
       <el-table :data="pagedList" v-loading="loading" stripe>
-        <el-table-column prop="facilityName" label="场地" min-width="160" />
+        <el-table-column prop="facilityName" label="设施" min-width="160" />
         <el-table-column label="维护类型" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="getMaintenanceTypeTag(row.maintenanceType)" effect="light">
@@ -135,7 +135,7 @@
     <el-dialog v-model="detailDialogVisible" title="维护详情" width="700px">
       <div v-if="currentRow" class="detail-grid">
         <div class="detail-item">
-          <span class="detail-label">场地名称</span>
+          <span class="detail-label">设施名称</span>
           <strong>{{ currentRow.facilityName || '-' }}</strong>
         </div>
         <div class="detail-item">
@@ -184,13 +184,13 @@
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
-        <el-form-item label="场地" prop="facilityId">
+        <el-form-item label="设施" prop="facilityId">
           <el-select
             v-model="form.facilityId"
             filterable
             style="width: 100%"
             :disabled="editorMode === 'edit'"
-            placeholder="选择需要维护的场地"
+            placeholder="选择需要维护的设施"
           >
             <el-option
               v-for="facility in facilityOptions"
@@ -344,7 +344,7 @@ const form = reactive({
 })
 
 const rules = {
-  facilityId: [{ required: true, message: '请选择场地', trigger: 'change' }],
+  facilityId: [{ required: true, message: '请选择设施', trigger: 'change' }],
   maintenanceType: [{ required: true, message: '请选择维护类型', trigger: 'change' }],
   description: [{ required: true, message: '请填写维护描述', trigger: 'blur' }]
 }
@@ -447,8 +447,8 @@ const loadFacilities = async () => {
         }))
       : []
   } catch (error) {
-    console.error('加载场地选项失败:', error)
-    ElMessage.error('加载场地选项失败')
+    console.error('加载设施选项失败:', error)
+    ElMessage.error('加载设施选项失败')
   }
 }
 

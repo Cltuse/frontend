@@ -2,9 +2,9 @@
   <div class="page-shell notice-page">
     <section class="page-hero">
       <div class="hero-copy">
-        <span class="hero-kicker">通知中心</span>
+        <span class="hero-kicker">Notice</span>
         <h1>系统通知</h1>
-        <p>查看系统公告、重要提醒和近期发布内容，让通知页与用户端其他页面保持同一套头部语言。</p>
+        <p>你可以查看所有系统公告、重要提醒和近期发布内容。</p>
       </div>
     </section>
 

@@ -16,7 +16,7 @@
 
       <div v-if="facility" class="hero-content">
         <div class="hero-copy">
-          <span class="hero-kicker">设施预约详情</span>
+          <span class="hero-kicker">Facility Detail</span>
           <h1>{{ facility.name }}</h1>
           <p>{{ facility.description || '这里展示设施详情、预约规则以及未来七天的预约时段明细。' }}</p>
           <div class="hero-actions">

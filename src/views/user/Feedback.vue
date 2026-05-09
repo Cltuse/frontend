@@ -3,7 +3,7 @@
     <section class="page-header">
       <div class="header-content">
         <div>
-          <span class="page-kicker">服务沟通中心</span>
+          <span class="page-kicker">Feedback</span>
           <h1 class="page-title">意见反馈</h1>
           <p class="page-subtitle">提交建议、投诉或咨询，并在同一页面查看管理员回复。</p>
         </div>
@@ -38,7 +38,7 @@
         <div class="panel-head">
           <div>
             <h2>提交反馈</h2>
-            <p>尽量描述清楚背景和诉求，管理员更容易准确处理。</p>
+            <p>你可以提交建议、投诉或咨询，管理员会尽快回复。</p>
           </div>
         </div>
 
@@ -92,7 +92,7 @@
         <div class="panel-head">
           <div>
             <h2>我的反馈记录</h2>
-            <p>列表卡片化展示状态、时间和管理员回复，方便持续跟进。</p>
+            <p>你可以查看所有提交的反馈记录，包括建议、投诉、咨询等。</p>
           </div>
           <el-button class="secondary-btn" @click="refreshData">刷新列表</el-button>
         </div>

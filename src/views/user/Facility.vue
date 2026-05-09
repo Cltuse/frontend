@@ -2,9 +2,9 @@
   <div class="page-shell facility-theme">
     <section class="page-hero">
       <div class="hero-copy">
-        <span class="hero-kicker">设施浏览</span>
+        <span class="hero-kicker">Facility</span>
         <h1>校园设施</h1>
-        <p>浏览、筛选并进入设施详情页查看规则、近七天空闲时段与预约情况，避免详情像弹窗一样打断浏览节奏。</p>
+        <p>你可以查看所有登记的设施，包括可预约、维护中、已损坏等状态。</p>
       </div>
     </section>
 
