@@ -89,12 +89,12 @@
         empty-text="当前没有符合条件的预约记录"
         @row-click="handleRowClick"
       >
-        <el-table-column prop="facilityName" label="设施名称" min-width="160" />
+        <el-table-column prop="facilityName" label="设施名称" min-width="140" />
         <el-table-column prop="userName" label="申请人" min-width="120" />
-        <el-table-column prop="startTime" label="开始时间" min-width="170" />
-        <el-table-column prop="endTime" label="结束时间" min-width="170" />
+        <el-table-column prop="startTime" label="开始时间" min-width="150" align="center" />
+        <el-table-column prop="endTime" label="结束时间" min-width="150" align="center" />
         <el-table-column prop="purpose" label="使用用途" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="verificationCode" label="核销码" width="120" align="center">
+        <el-table-column prop="verificationCode" label="核销码" min-width="220" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.verificationCode" type="info" effect="plain" round>{{ row.verificationCode }}</el-tag>
             <span v-else>-</span>
@@ -114,7 +114,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" type="primary" plain class="view-btn" @click.stop="handleRowClick(row)">

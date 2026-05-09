@@ -126,6 +126,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { weatherAPI } from '../../api/weather';
+import { apiBaseUrl } from '../../config/env';
 import RecommendWidget from '../../components/RecommendWidget.vue';
 
 const router = useRouter();
@@ -135,11 +136,11 @@ const weatherReady = ref(false);
 const weatherIconBroken = ref(false);
 
 const weatherInfo = ref({
-  weatherType: '晴',
-  temperature: '25℃',
-  weatherIcon: '☀',
-  moodQuote: '愿你今天的学习、实验和预约安排都顺顺利利。',
-  city: '北京',
+  weatherType: '获取中',
+  temperature: '--',
+  weatherIcon: '/files/weather/update.ico',
+  moodQuote: '正在根据当前 IP 和地理位置同步天气信息。',
+  city: '定位中',
   ipAddress: '',
   regionAddress: '',
   updateTime: ''
@@ -186,6 +187,23 @@ const quickActions = [
 
 const displayName = computed(() => currentUser.value?.realName || currentUser.value?.username || '同学');
 
+const resolveBackendAssetUrl = (path) => {
+  if (typeof path !== 'string' || !path.startsWith('/files/')) {
+    return path;
+  }
+
+  if (!/^(https?:)?\/\//i.test(apiBaseUrl)) {
+    return path;
+  }
+
+  try {
+    const apiUrl = new URL(apiBaseUrl);
+    return `${apiUrl.origin}${path}`;
+  } catch (error) {
+    return path;
+  }
+};
+
 const normalizeWeatherIcon = (value) => {
   if (typeof value !== 'string') {
     return '';
@@ -202,15 +220,15 @@ const normalizeWeatherIcon = (value) => {
 
   const filesIndex = normalized.indexOf('/files/');
   if (filesIndex >= 0) {
-    return normalized.slice(filesIndex);
+    return resolveBackendAssetUrl(normalized.slice(filesIndex));
   }
 
   if (normalized.startsWith('files/')) {
-    return `/${normalized}`;
+    return resolveBackendAssetUrl(`/${normalized}`);
   }
 
   if (normalized.startsWith('/')) {
-    return normalized;
+    return resolveBackendAssetUrl(normalized);
   }
 
   return '';
@@ -287,15 +305,14 @@ const scheduleWeatherRetry = (retryCount) => {
 const applyWeatherData = (data, options = {}) => {
   const preserveLocation = options.preserveLocation ?? false;
   const currentLocation = preserveLocation ? weatherInfo.value : null;
-  const currentWeather = weatherInfo.value;
 
   weatherIconBroken.value = false;
   weatherInfo.value = {
-    weatherType: data?.weatherType || '晴',
-    temperature: data?.temperature || '25℃',
-    weatherIcon: data?.weatherIcon || '☀',
-    moodQuote: data?.moodQuote || '愿你今天的学习和预约都顺顺利利。',
-    city: data?.city || '北京',
+    weatherType: data?.weatherType || '未知',
+    temperature: data?.temperature || '--',
+    weatherIcon: data?.weatherIcon || '/files/weather/未知.ico',
+    moodQuote: data?.moodQuote || '天气信息暂时不可用，请稍后刷新重试。',
+    city: data?.city || currentLocation?.city || '定位失败',
     ipAddress: data?.ipAddress || currentLocation?.ipAddress || '',
     regionAddress: data?.regionAddress || currentLocation?.regionAddress || '',
     updateTime: data?.updateTime || new Date().toLocaleString('zh-CN', { hour12: false })
@@ -327,13 +344,13 @@ const fetchWeatherLegacy = async () => {
   }
 
   applyWeatherData({
-    weatherType: '晴',
-    temperature: '25℃',
-    weatherIcon: '☀',
-    moodQuote: '天气数据暂时未刷新成功，但愿你今天依然有明亮心情。',
-    city: '北京',
+    weatherType: '未知',
+    temperature: '--',
+    weatherIcon: '/files/weather/未知.ico',
+    moodQuote: '天气数据暂时未刷新成功，请稍后重试。',
+    city: '定位失败',
     ipAddress: '',
-    regionAddress: '暂无可用的IP归属地信息',
+    regionAddress: '暂无可用的 IP 归属地信息',
     updateTime: new Date().toLocaleString('zh-CN', { hour12: false })
   });
   loading.value = false;
@@ -660,6 +677,7 @@ onBeforeUnmount(() => {
   width: 72px;
   height: 72px;
   object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(42%) sepia(18%) saturate(633%) hue-rotate(294deg) brightness(90%) contrast(87%);
 }
 
 .weather-emoji {
