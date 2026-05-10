@@ -312,6 +312,14 @@ const goToLogin = () => {
 
 .register-form {
   padding: 20px 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
 }
 
 .register-form :deep(.el-input__wrapper) {
@@ -320,6 +328,15 @@ const goToLogin = () => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   height: 52px;
   background: #f7fafc;
+}
+
+.register-form :deep(.el-form-item) {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.register-form :deep(.el-form-item__content) {
+  width: 100%;
 }
 
 .register-button {

@@ -19,7 +19,7 @@
       <article class="summary-card">
         <span class="summary-label">可用设施</span>
         <strong>{{ facilityStats.available }}</strong>
-        <p>当前页中可直接开放预约的设施数量</p>
+        <p>可直接开放预约的设施数量</p>
       </article>
       <article class="summary-card">
         <span class="summary-label">维护中</span>
@@ -34,7 +34,7 @@
       <article class="summary-card">
         <span class="summary-label">已分配负责人</span>
         <strong>{{ assignedCount }}</strong>
-        <p>当前页中已绑定设施管理员的资源数量</p>
+        <p>已绑定设施管理员的资源数量</p>
       </article>
     </section>
 
@@ -420,6 +420,7 @@ const uploading = ref(false);
 const isEdit = ref(false);
 const total = ref(0);
 const facilityList = ref([]);
+const allFacilities = ref([]);
 const brokenImageKeys = ref(new Set());
 const categoryOptions = ref([]);
 const maintainerOptions = ref([]);
@@ -449,16 +450,17 @@ const rules = {
 };
 
 const facilityStats = computed(() => ({
-  total: total.value,
-  available: facilityList.value.filter((item) => item.status === 'AVAILABLE').length,
-  maintenance: facilityList.value.filter((item) => item.status === 'MAINTENANCE').length,
-  damaged: facilityList.value.filter((item) => item.status === 'DAMAGED').length
+  total: allFacilities.value.length,
+  available: allFacilities.value.filter((item) => item.status === 'AVAILABLE').length,
+  maintenance: allFacilities.value.filter((item) => item.status === 'MAINTENANCE').length,
+  damaged: allFacilities.value.filter((item) => item.status === 'DAMAGED').length
 }));
 
-const assignedCount = computed(() => facilityList.value.filter((item) => item.maintainerName).length);
+const assignedCount = computed(() => allFacilities.value.filter((item) => item.maintainerName).length);
 
 onMounted(() => {
   loadFacilityList();
+  loadFacilityStats();
   loadCategoryOptions();
   loadMaintainerOptions();
 });
@@ -515,6 +517,21 @@ async function loadFacilityList() {
     total.value = 0;
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadFacilityStats() {
+  try {
+    const result = await facilityAPI.list();
+    if (result?.code !== 200) {
+      allFacilities.value = [];
+      return;
+    }
+
+    allFacilities.value = Array.isArray(result.data) ? result.data : [];
+  } catch (error) {
+    console.error('加载设施统计数据失败:', error);
+    allFacilities.value = [];
   }
 }
 
@@ -605,6 +622,7 @@ function handleDelete(row) {
     .then(async () => {
       await facilityAPI.delete(row.id);
       ElMessage.success('设施已删除');
+      await loadFacilityStats();
       await loadFacilityList();
     })
     .catch(() => {});
@@ -670,6 +688,7 @@ async function handleUploadImage() {
     ElMessage.success('图片上传成功');
     imageDialogVisible.value = false;
     selectedImage.value = null;
+    await loadFacilityStats();
     await loadFacilityList();
   } catch (error) {
     console.error('图片上传失败:', error);
@@ -813,6 +832,7 @@ async function handleSubmit() {
     }
 
     dialogVisible.value = false;
+    await loadFacilityStats();
     await loadFacilityList();
   } catch (error) {
     console.error('提交设施失败:', error);

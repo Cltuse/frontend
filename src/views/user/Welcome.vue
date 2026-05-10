@@ -108,12 +108,12 @@
         </div>
       </article>
     </section>
-    <!-- 推荐模块 
+    <!-- 推荐模块
     <section v-if="currentUser?.id" class="recommend-shell">
       <div class="recommend-head">
         <div>
           <h2>个性化推荐</h2>
-          <p>沿用当前清新的卡片风格，但内容更偏向用户实际使用场景。</p>
+          <p>根据你的预约记录和偏好，推荐你可能感兴趣的设施。</p>
         </div>
       </div>
       <RecommendWidget :userId="currentUser.id" />
@@ -139,7 +139,7 @@ const weatherInfo = ref({
   weatherType: '获取中',
   temperature: '--',
   weatherIcon: '/files/weather/update.ico',
-  moodQuote: '正在根据当前 IP 和地理位置同步天气信息。',
+  moodQuote: '正在根据当前登录 IP 定位并同步天气信息。',
   city: '定位中',
   ipAddress: '',
   regionAddress: '',
@@ -312,9 +312,9 @@ const applyWeatherData = (data, options = {}) => {
     temperature: data?.temperature || '--',
     weatherIcon: data?.weatherIcon || '/files/weather/未知.ico',
     moodQuote: data?.moodQuote || '天气信息暂时不可用，请稍后刷新重试。',
-    city: data?.city || currentLocation?.city || '定位失败',
+    city: data?.city || currentLocation?.city || '合川区',
     ipAddress: data?.ipAddress || currentLocation?.ipAddress || '',
-    regionAddress: data?.regionAddress || currentLocation?.regionAddress || '',
+    regionAddress: data?.regionAddress || currentLocation?.regionAddress || 'IP归属地暂时无法获取，已回退合川区',
     updateTime: data?.updateTime || new Date().toLocaleString('zh-CN', { hour12: false })
   };
 };
@@ -332,7 +332,7 @@ const fetchWeatherLegacy = async () => {
   }
 
   try {
-    const fallbackResponse = await weatherAPI.getWeather('北京');
+    const fallbackResponse = await weatherAPI.getWeather('合川区');
     if (fallbackResponse.data?.data) {
       applyWeatherData(fallbackResponse.data.data);
       return;
@@ -348,9 +348,9 @@ const fetchWeatherLegacy = async () => {
     temperature: '--',
     weatherIcon: '/files/weather/未知.ico',
     moodQuote: '天气数据暂时未刷新成功，请稍后重试。',
-    city: '定位失败',
+    city: '合川区',
     ipAddress: '',
-    regionAddress: '暂无可用的 IP 归属地信息',
+    regionAddress: 'IP归属地暂时无法获取，已回退合川区',
     updateTime: new Date().toLocaleString('zh-CN', { hour12: false })
   });
   loading.value = false;
@@ -411,7 +411,7 @@ const fetchWeather = async (options = {}) => {
   }
 
   try {
-    const fallbackResponse = await weatherAPI.getWeather('北京');
+    const fallbackResponse = await weatherAPI.getWeather('合川区');
     if (requestId === weatherRequestId && fallbackResponse.data?.data) {
       applyWeatherData(fallbackResponse.data.data, { preserveLocation: true });
       scheduleWeatherRetry(retryCount + 1);

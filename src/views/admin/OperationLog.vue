@@ -16,23 +16,23 @@
     <section class="summary-grid">
       <article class="summary-card">
         <span class="summary-label">当前页记录</span>
-        <strong>{{ logData.length }}</strong>
+        <strong>{{ summaryStats.totalLogs }}</strong>
         <p>本页已经加载到表格中的日志数量</p>
       </article>
       <article class="summary-card">
         <span class="summary-label">已启用筛选</span>
         <strong>{{ activeFilterCount }}</strong>
-        <p>当前筛选面板中生效的条件组合数量</p>
+        <p>面板中生效的条件组合数量</p>
       </article>
       <article class="summary-card">
         <span class="summary-label">当前页高风险操作</span>
-        <strong>{{ riskCount }}</strong>
+        <strong>{{ summaryStats.riskCount }}</strong>
         <p>包含删除、拒绝、拉黑等关键操作的日志数</p>
       </article>
       <article class="summary-card">
         <span class="summary-label">操作类型数</span>
-        <strong>{{ currentTypeCount }}</strong>
-        <p>本页已出现的不同操作类型数量</p>
+        <strong>{{ summaryStats.typeCount }}</strong>
+        <p>不同操作类型数量</p>
       </article>
     </section>
 
@@ -254,6 +254,11 @@ const logData = ref([]);
 const operatorOptions = ref([]);
 const operationTypes = ref([]);
 const currentDetail = ref(null);
+const summaryStats = reactive({
+  totalLogs: 0,
+  riskCount: 0,
+  typeCount: 0
+});
 
 const searchForm = reactive({
   operatorId: '',
@@ -268,16 +273,7 @@ const pagination = reactive({
   total: 0
 });
 
-const operatorCount = computed(() => new Set(logData.value.map((item) => item.operatorName || item.operatorId || 'system')).size);
 const activeFilterCount = computed(() => [searchForm.operatorId, searchForm.operationType, searchForm.startTime, searchForm.endTime].filter(Boolean).length);
-const riskCount = computed(() =>
-  logData.value.filter((item) =>
-    ['REJECT', 'DELETE', 'BLACKLIST', 'REMOVE_BLACKLIST', 'ADD_BLACKLIST', 'REVOKE'].some((keyword) =>
-      String(item.operationType || '').includes(keyword)
-    )
-  ).length
-);
-const currentTypeCount = computed(() => new Set(logData.value.map((item) => item.operationType)).size);
 
 onMounted(() => {
   loadOperationTypes();
@@ -300,36 +296,51 @@ async function loadOperationTypes() {
 async function loadOperationLogs() {
   loading.value = true;
   try {
-    const params = {
-      page: pagination.currentPage - 1,
-      size: pagination.pageSize
-    };
-
-    if (searchForm.operatorId) {
-      params.operatorId = searchForm.operatorId;
-    }
-    if (searchForm.operationType) {
-      params.operationType = searchForm.operationType;
-    }
-    if (searchForm.startTime) {
-      params.startTime = searchForm.startTime;
-    }
-    if (searchForm.endTime) {
-      params.endTime = searchForm.endTime;
-    }
-
-    const response = await adminAPI.getOperationLogs(params);
-    const data = response.data || {};
+    const [logResponse, statsResponse] = await Promise.all([
+      adminAPI.getOperationLogs(buildOperationLogParams(true)),
+      adminAPI.getOperationLogStats(buildOperationLogParams(false))
+    ]);
+    const data = logResponse.data || {};
+    const stats = statsResponse.data || {};
     logData.value = data.content || [];
     pagination.total = data.totalElements || 0;
+    summaryStats.totalLogs = stats.totalLogs || 0;
+    summaryStats.riskCount = stats.riskCount || 0;
+    summaryStats.typeCount = stats.typeCount || 0;
   } catch (error) {
     console.error('加载操作日志失败:', error);
     ElMessage.error('加载操作日志失败');
     logData.value = [];
     pagination.total = 0;
+    summaryStats.totalLogs = 0;
+    summaryStats.riskCount = 0;
+    summaryStats.typeCount = 0;
   } finally {
     loading.value = false;
   }
+}
+
+function buildOperationLogParams(includePagination = true) {
+  const params = {};
+
+  if (includePagination) {
+    params.page = pagination.currentPage - 1;
+    params.size = pagination.pageSize;
+  }
+  if (searchForm.operatorId) {
+    params.operatorId = searchForm.operatorId;
+  }
+  if (searchForm.operationType) {
+    params.operationType = searchForm.operationType;
+  }
+  if (searchForm.startTime) {
+    params.startTime = searchForm.startTime;
+  }
+  if (searchForm.endTime) {
+    params.endTime = searchForm.endTime;
+  }
+
+  return params;
 }
 
 function handleSearch() {

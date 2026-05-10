@@ -247,6 +247,7 @@ export const adminAPI = {
     
     // 获取操作日志列表
     getOperationLogs: (params) => request.get('/admin/operation-logs', { params }),
+    getOperationLogStats: (params) => request.get('/admin/operation-logs/stats', { params }),
     getOperationLogById: (id) => request.get(`/admin/operation-logs/${id}`),
     getOperationTypes: () => request.get('/admin/operation-logs/types'),
     
